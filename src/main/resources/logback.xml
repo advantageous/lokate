@@ -1,0 +1,19 @@
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %magenta(%d{yyyy-MM-dd HH:mm:ss.SSS}) %yellow([%thread]) %highlight(%-5level) %cyan(%logger{15}) - %msg%n
+            </pattern>
+            <!-- use this pattern to include the caller of the message.  It works like a stacktrace.  Good for debugging, but very slow, so don't use it normally -->
+            <!--<pattern>%magenta(%d{yyyy-MM-dd HH:mm:ss.SSS}) %yellow([%thread]) %highlight(%-5level) %cyan(%caller{1}) - %msg %n</pattern>-->
+        </encoder>
+    </appender>
+
+    <root level="WARN">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="com.redbullmediahouse" level="INFO"/>
+
+</configuration>

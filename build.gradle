@@ -1,0 +1,186 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath 'se.transmode.gradle:gradle-docker:1.2'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'application'
+    id "net.saliman.cobertura" version "2.3.0"
+    id 'com.github.johnrengelman.shadow' version '1.2.3'
+    id 'idea'
+    id 'org.ensime.gradle' version '0.2.3'
+}
+
+ext {
+    vertxVersion = '3.2.0'
+    jsOutDir = "${projectDir}/build/generated"
+}
+
+apply plugin: 'docker'
+
+group 'com.redbullsoundselect'
+version '0.2.0'
+
+docker {
+    baseImage "vertx/vertx3-exec"
+    maintainer 'Geoff Chandler "geoff.chandler@us.redbullmediahouse.com"'
+}
+
+task buildDocker(type: Docker) {
+
+    tagVersion = System.getenv("BUILD_NUMBER") ?: project.version
+    push = Boolean.getBoolean("docker.push")
+    applicationName = project.applicationName
+
+    addFile {
+        from "${project.shadowJar.outputs.files.singleFile}"
+        into "/opt/rbss/"
+    }
+    exposePort 8080
+    entryPoint = ["sh", "-c"]
+    defaultCommand = ["java -jar /opt/rbss/${project.name}-${project.version}-fat.jar"]
+
+}
+
+sourceSets {
+    generated {
+        java.srcDir "${projectDir}/src/generated/java"
+    }
+}
+
+idea {
+    project {
+        languageLevel = '1.8'
+    }
+}
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/libs-release/' }
+    maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/libs-snapshot/' }
+    maven { url = 'http://oss.sonatype.org/content/repositories/snapshots/' }
+}
+
+sourceCompatibility = '1.8'
+mainClassName = 'com.redbullsoundselect.impressions.ImpressionVerticle'
+
+dependencies {
+    compile "ch.qos.logback:logback-core:1.1.3"
+    compile "ch.qos.logback:logback-classic:1.1.3"
+    compile "org.slf4j:slf4j-api:1.7.12"
+    compile "io.vertx:vertx-core:$vertxVersion"
+    compile "io.vertx:vertx-web:$vertxVersion"
+    compile "io.vertx:vertx-lang-js:$vertxVersion"
+    compile "io.vertx:vertx-codegen:$vertxVersion"
+    compile "io.vertx:vertx-service-proxy:$vertxVersion"
+    compile "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
+    compile 'com.typesafe:config:1.3.0'
+    compile 'com.amazonaws:aws-java-sdk-ec2:1.10.51'
+    compile 'com.datastax.cassandra:cassandra-driver-core:3.0.0'
+    testCompile "io.vertx:vertx-unit:$vertxVersion"
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
+
+/* used to create the fat jar files. */
+shadowJar {
+    classifier = 'fat'
+    manifest {
+        attributes(
+                "Project-Version": project.version
+        )
+    }
+}
+build.dependsOn shadowJar
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.11'
+}
+
+task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
+    doFirst {
+        new File(jsOutDir).mkdirs()
+    }
+    source = sourceSets.main.java // input source set
+    classpath = configurations.compile //+ configurations.vertx // add processor module to classpath
+    // specify javac arguments
+    options.compilerArgs = [
+            "-proc:only",
+            "-processor", "io.vertx.codegen.CodeGenProcessor", // vertx processor here
+            "-AoutputDirectory=${jsOutDir}"
+    ]
+    // specify output of generated code
+    destinationDir = file("${projectDir}/src/generated/java")
+}
+
+compileJava {
+    dependsOn(generateProxies)
+    source += sourceSets.generated.java
+}
+
+task generateNodePackage() << {
+    new File("${jsOutDir}/resources/rbmh-service-discovery-client-js/package.json").newWriter().withWriter { w ->
+        w << """{
+  "name": "$project.name",
+  "version": "$project.version",
+  "publishConfig": {"registry":"http://npm.rbmhops.net/artifactory/api/npm/rbmh-npm"}
+}
+"""
+    }
+}
+generateNodePackage.dependsOn generateProxies
+
+task copyNodePackage(type: Copy) {
+    from "${jsOutDir}/resources/"
+    into buildDir
+}
+copyNodePackage.dependsOn generateNodePackage
+
+build.dependsOn copyNodePackage
+
+task generateMesosDeploy() << {
+    def shortSha = "$System.env.SHORT_SHA"
+    new File("${buildDir}/mesos.deploy.json").newWriter().withWriter { w ->
+        w << """{
+    "container": {
+        "type": "DOCKER",
+        "docker": {
+            "image": "rbmh-docker.docker.rbmhops.net/discovery-service:$shortSha",
+            "network": "BRIDGE",
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 0,
+                    "servicePort": 0,
+                    "protocol": "tcp"
+                }
+            ]
+        }
+    },
+    "id": "${project.name}",
+    "instances": 1,
+    "cpus": 1,
+    "mem": 512,
+    "uris": []
+}
+"""
+    }
+}
+
+test {
+    useJUnit {
+        includeCategories 'com.redbullmediahouse.platform.UnitTests'
+    }
+}
+
+task itest(type: Test) {
+    useJUnit {
+        includeCategories 'com.redbullmediahouse.platform.IntegrationTests'
+    }
+}
+
