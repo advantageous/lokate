@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
  */
 public class MarathonDiscoveryService implements DiscoveryService {
 
-
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final Vertx vertx;
@@ -55,7 +54,6 @@ public class MarathonDiscoveryService implements DiscoveryService {
         }
     }
 
-
     public MarathonDiscoveryService(final Vertx vertx,
                                     final Config config) {
         this.vertx = vertx;
@@ -72,24 +70,22 @@ public class MarathonDiscoveryService implements DiscoveryService {
         }
     }
 
-
     @Override
     public void lookupServiceByName(final String name,
                                     final Handler<AsyncResult<ServiceDefinition>> result) {
 
-
         final HttpClientRequest request = createHttpClient().request(HttpMethod.GET, GET_TASKS,
                 clientResponseFromAppCall -> {
-
 
                     if (clientResponseFromAppCall.statusCode() > 299) {
                         handleErrorCase(clientResponseFromAppCall, result, name);
                     } else {
 
                         clientResponseFromAppCall.bodyHandler(buffer ->
-                                findServiceFromResponsesFirstPort(name, buffer.toJsonObject().getJsonArray("tasks"), result));
+                                findServiceFromResponsesFirstPort(
+                                        name, buffer.toJsonObject().getJsonArray("tasks"), result)
+                        );
                     }
-
                 });
 
         request.exceptionHandler(throwable -> result.handle(Future.failedFuture(throwable)));
@@ -102,45 +98,45 @@ public class MarathonDiscoveryService implements DiscoveryService {
                                                     final int port,
                                                     final Handler<AsyncResult<ServiceDefinition>> result) {
 
-
         final HttpClientRequest request = createHttpClient().request(HttpMethod.GET, GET_TASKS,
                 clientResponseFromAppCall -> {
 
                     if (clientResponseFromAppCall.statusCode() > 299) {
                         handleErrorCase(clientResponseFromAppCall, result, name);
                     } else {
-
                         clientResponseFromAppCall.bodyHandler(buffer ->
-                                findServiceFromResponsesWithPort(name, port, buffer.toJsonObject().getJsonArray("tasks"), result));
+                                findServiceFromResponsesWithPort(
+                                        name, port, buffer.toJsonObject().getJsonArray("tasks"), result
+                                )
+                        );
                     }
-
                 });
 
         request.exceptionHandler(throwable -> result.handle(Future.failedFuture(throwable)));
         request.end();
-
     }
-
 
     private void findServiceFromResponsesWithPort(final String name,
                                                   final int port,
                                                   final JsonArray responseFromTaskCall,
                                                   final Handler<AsyncResult<ServiceDefinition>> result) {
 
-        final List<ServiceDefinition> serviceDefinitions = responseFromTaskCall.stream().filter(o -> o instanceof JsonObject)
+        final List<ServiceDefinition> serviceDefinitions = responseFromTaskCall
+                .stream()
+                .filter(o -> o instanceof JsonObject)
                 .map(o -> (JsonObject) o)
                 .filter(jsonObject -> isServiceFromTask(name, jsonObject))
-                .map(jsonObject -> convertToServiceDefinitionWithPort(jsonObject, port)).collect(Collectors.toList());
+                .map(jsonObject -> convertToServiceDefinitionWithPort(jsonObject, port))
+                .collect(Collectors.toList());
 
         extractDefinition(name, result, serviceDefinitions);
-
     }
 
     private void extractDefinition(final String name,
                                    final Handler<AsyncResult<ServiceDefinition>> result,
                                    final List<ServiceDefinition> serviceDefinitions) {
-        if (serviceDefinitions.size() == 0) {
 
+        if (serviceDefinitions.size() == 0) {
             logger.error("Service was not found {}, there are 0 services by that name in Marathon.", name);
             result.handle(Future.failedFuture(new IllegalStateException("Service Not Found")));
         } else {
@@ -162,7 +158,6 @@ public class MarathonDiscoveryService implements DiscoveryService {
                 .map(o -> (JsonObject) o)
                 .collect(Collectors.toList());
 
-
         final List<ServiceDefinition> serviceDefinitions = marathonTasksAsJsonObjects.stream()
                 .filter(jsonObject -> isServiceFromTask(name, jsonObject))
                 .map(this::convertToServiceDefinitionFirstPort)
@@ -173,7 +168,6 @@ public class MarathonDiscoveryService implements DiscoveryService {
 
     private ServiceDefinition convertToServiceDefinitionWithPort(final JsonObject jsonObject,
                                                                  final int port) {
-
 
         if (logger.isInfoEnabled()) {
             logger.info("Convert marathon task to Service Definition appId {}, port {}",
@@ -196,14 +190,16 @@ public class MarathonDiscoveryService implements DiscoveryService {
         return new ServiceDefinition(jsonObject.getString("host"), publicPorts.get(i));
     }
 
-
     private ServiceDefinition convertToServiceDefinitionFirstPort(final JsonObject jsonObject) {
 
         if (logger.isInfoEnabled()) {
             logger.info("Convert marathon task to Service Definition appId {}", jsonObject.getString("appId"));
         }
 
-        final List<Integer> appPorts = jsonObject.getJsonArray("ports").stream().map(o -> (Integer) o).collect(Collectors.toList());
+        final List<Integer> appPorts = jsonObject.getJsonArray("ports")
+                .stream()
+                .map(o -> (Integer) o)
+                .collect(Collectors.toList());
 
         if (appPorts.size() > 0) {
             return new ServiceDefinition(jsonObject.getString("host"), appPorts.get(0));
@@ -214,14 +210,16 @@ public class MarathonDiscoveryService implements DiscoveryService {
     }
 
     private boolean isServiceFromTask(final String name, final JsonObject jsonObject) {
+
         if (logger.isInfoEnabled()) {
             logger.info("Is Service from task {} appId {}", name, jsonObject.getString("appId"));
         }
         return jsonObject.getString("appId").equals("/" + name);
     }
 
-
-    private void handleErrorCase(HttpClientResponse httpClientResponse, Handler<AsyncResult<ServiceDefinition>> result, String name) {
+    private void handleErrorCase(final HttpClientResponse httpClientResponse,
+                                 final Handler<AsyncResult<ServiceDefinition>> result,
+                                 final String name) {
 
         logger.error("Service not found {}, Marathon returned code {}, {}",
                 httpClientResponse.statusCode(),

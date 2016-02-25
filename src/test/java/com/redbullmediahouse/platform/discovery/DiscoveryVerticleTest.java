@@ -46,7 +46,6 @@ public class DiscoveryVerticleTest {
 
         final DiscoveryService discoveryService = createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
         discoveryService.lookupServiceByName("cassandra", event -> {
-
             context.assertTrue(event.succeeded());
             context.assertNotNull(event.result());
             context.assertTrue(event.result().getPort() > 10_000);
@@ -60,7 +59,7 @@ public class DiscoveryVerticleTest {
         final Async async = context.async();
 
         final DiscoveryService discoveryService = createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
-        discoveryService.lookupServiceByName("ipsec1", event -> { //
+        discoveryService.lookupServiceByName("ipsec1", event -> {
             context.assertTrue(event.succeeded());
             context.assertNotNull(event.result());
             context.assertEquals(100, event.result().getPort());
@@ -74,10 +73,10 @@ public class DiscoveryVerticleTest {
         final Async async = context.async();
 
         final DiscoveryService discoveryService = createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
-        discoveryService.lookupServiceByName("hdfs", event -> {
+        discoveryService.lookupServiceByName("chronos", event -> {
             context.assertTrue(event.succeeded());
             context.assertNotNull(event.result());
-            context.assertEquals(17151, event.result().getPort());
+            context.assertNotNull(event.result().getPort());
             async.complete();
         });
     }
@@ -89,10 +88,10 @@ public class DiscoveryVerticleTest {
         final Async async = context.async();
 
         final DiscoveryService discoveryService = createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
-        discoveryService.lookupServiceByName("rbss-marathon-master-dev", event -> {
+        discoveryService.lookupServiceByName("rbss.staging.zookeeper1", event -> {
             context.assertTrue(event.succeeded());
             context.assertNotNull(event.result());
-            context.assertEquals(8080, event.result().getPort());
+            context.assertNotNull(event.result().getPort());
             async.complete();
         });
     }

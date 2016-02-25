@@ -106,9 +106,9 @@ public class DnsDiscoveryServiceUsingARecords implements DiscoveryService {
                                                         final String name) {
 
         final int index = Math.abs(random.nextInt() % (dnsResults.size()));
-        final String ipaddress = dnsResults.get(index);
+        final String ipAddress = dnsResults.get(index);
 
-        return new ServiceDefinition(ipaddress, nameToPort.get(name));
+        return new ServiceDefinition(ipAddress, nameToPort.get(name));
     }
 
     protected ServiceDefinition createServiceDefinitionWithPort(final List<String> dnsResults,

@@ -1,6 +1,5 @@
 package com.redbullmediahouse.platform.discovery.impl;
 
-import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -13,18 +12,18 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class MarathonDiscoveryServiceTest {
 
-
     @Rule
     public final RunTestOnContext rule = new RunTestOnContext();
-    private final String host = "10.0.4.103";
-    private final int port = 8080;
-    private Vertx vertx;
     private MarathonDiscoveryService marathonDiscoveryService;
 
     @Before
     public void setUp() throws Exception {
-        vertx = rule.vertx();
-        marathonDiscoveryService = new MarathonDiscoveryService(vertx, port, host, "v2");
+        marathonDiscoveryService = new MarathonDiscoveryService(
+                rule.vertx(),
+                8080,
+                "mesos-master1.rbss.staging.rbmhops.net",
+                "v2"
+        );
     }
 
     @Test
@@ -32,13 +31,11 @@ public class MarathonDiscoveryServiceTest {
 
         final Async async = context.async();
 
-        marathonDiscoveryService.lookupServiceByName("hdfs",
+        marathonDiscoveryService.lookupServiceByName("chronos",
                 serviceDefinitionAsyncResult -> {
-
                     context.assertTrue(serviceDefinitionAsyncResult.succeeded());
                     context.assertTrue(serviceDefinitionAsyncResult.result().getPort() > 10_000);
                     async.complete();
-
                 });
     }
 
@@ -47,16 +44,14 @@ public class MarathonDiscoveryServiceTest {
 
         final Async async = context.async();
 
-        marathonDiscoveryService.lookupServiceByNameAndContainerPort("hdfs", 10006,
+        marathonDiscoveryService.lookupServiceByNameAndContainerPort("chronos", 8080,
                 serviceDefinitionAsyncResult -> {
-
                     context.assertTrue(serviceDefinitionAsyncResult.succeeded());
-                    context.assertEquals(17151, serviceDefinitionAsyncResult.result().getPort());
+                    context.assertNotNull(serviceDefinitionAsyncResult.result().getAddress());
+                    context.assertNotNull(serviceDefinitionAsyncResult.result().getPort());
                     async.complete();
-
                 });
     }
-
 
     @Test
     public void testLookupNotFound(final TestContext context) throws Exception {

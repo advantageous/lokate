@@ -1,8 +1,8 @@
 package com.redbullmediahouse.platform.discovery.impl;
 
+import com.redbullmediahouse.platform.config.ConfigUtils;
 import com.redbullmediahouse.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import org.junit.BeforeClass;
@@ -15,20 +15,21 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 
-public class DockerDiscoveryServiceTest  {
+public class DockerDiscoveryServiceTest {
 
     protected static DockerDiscoveryService discoveryService;
 
-
     @BeforeClass
     public static void setup() {
-        final Config dockerConfig = ConfigFactory.load().getConfig(DockerDiscoveryService.class.getPackage().getName()).getConfig("provider-config.docker");
-         discoveryService = new DockerDiscoveryService(
+        final Config dockerConfig =
+                ConfigUtils.getConfig("com.redbullmediahouse.platform.discovery").getConfig("provider-config.docker");
+        discoveryService = new DockerDiscoveryService(
                 Vertx.vertx(),
                 URI.create(dockerConfig.getString("host")).getHost(),
                 dockerConfig.getInt("port")
         );
     }
+
     @Test
     public void testLookupByName() throws Exception {
 

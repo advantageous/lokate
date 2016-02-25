@@ -29,7 +29,6 @@ import java.util.function.Consumer;
  */
 public class AmazonEc2DiscoveryService implements DiscoveryService {
 
-    private final String keyName;
     private final Map<String, Integer> nameToPort;
     private final Vertx vertx;
     private final boolean usePublicAddress;
@@ -37,11 +36,9 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     public AmazonEc2DiscoveryService(final Vertx vertx,
-                                     final String keyName,
                                      final Map<String, Integer> nameToPort,
                                      final boolean usePublicAddress,
                                      final String ec2Endpoint) {
-        this.keyName = keyName;
         this.nameToPort = nameToPort;
         this.vertx = vertx;
         this.usePublicAddress = usePublicAddress;
@@ -49,15 +46,12 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
 
         if (logger.isInfoEnabled()) {
             logger.info("Created Amazon EC2 Discovery Service {} {} {} {}",
-                    keyName, usePublicAddress, ec2Endpoint, nameToPort);
+                    usePublicAddress, ec2Endpoint, nameToPort);
         }
     }
 
     public AmazonEc2DiscoveryService(final Vertx vertx,
                                      final Config config) {
-
-
-        this.keyName = config.getString("key-name");
 
         this.nameToPort = new HashMap<>();
 
@@ -72,7 +66,7 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
 
         if (logger.isInfoEnabled()) {
             logger.info("Created Amazon EC2 Discovery Service {} {} {} {}",
-                    keyName, usePublicAddress, ec2Endpoint, nameToPort);
+                    usePublicAddress, ec2Endpoint, nameToPort);
         }
     }
 
@@ -80,9 +74,7 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
                                                 final Filter... filters) {
 
         final AmazonEC2Client amazonEC2Client = new AmazonEC2Client();
-
         amazonEC2Client.setEndpoint(ec2Endpoint);
-
 
         final DescribeInstancesRequest request = new DescribeInstancesRequest();
         request.setFilters(Arrays.asList(filters));
@@ -93,7 +85,6 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
             describeInstancesResult.getReservations().stream().forEach(
                     reservation -> reservation.getInstances().stream()
                             .forEach((Consumer<Instance>) instance -> {
-
                                 if (logger.isInfoEnabled()) {
                                     logger.info("Amazon SD Lookup imgid {} instanceid {} life {} keyname {} nic 1 DNS {}" +
                                                     " pub dns {} priv ip {}",
@@ -111,10 +102,9 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
 
                                 }
 
-
                                 instances.add(instance);
-                            }));
-
+                            })
+            );
 
             final String token = describeInstancesResult.getNextToken();
             if (token == null) {
@@ -145,10 +135,11 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
     private void callEc2LookupAsync(final String name,
                                     final Handler<AsyncResult<ServiceDefinition>> result,
                                     final int port) {
+
         vertx.executeBlocking(future ->
-                        lookupServiceAndRespond(name, future, port),
-                false,
-                asyncResult -> extractAsyncCallToResult(result, asyncResult));
+                lookupServiceAndRespond(name, future, port), false, asyncResult ->
+                extractAsyncCallToResult(result, asyncResult)
+        );
     }
 
     private void extractAsyncCallToResult(final Handler<AsyncResult<ServiceDefinition>> result,
@@ -164,29 +155,20 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
     private void lookupServiceAndRespond(final String name,
                                          final Future<Object> future,
                                          final int port) {
+
         final List<Instance> instances = doLookupService(name);
 
         if (instances.size() > 0) {
-
             Instance instance = instances.get(0);
             ServiceDefinition serviceDefinition = getServiceDefinitionFromEC2Instance(port, instance);
             future.complete(serviceDefinition);
-
         } else {
             future.fail(new IllegalStateException("Service not found " + name));
         }
     }
 
     private List<Instance> doLookupService(final String name) {
-
-        if (!keyName.isEmpty()) {
-            return lookupServiceByFilter(this.ec2Endpoint,
-                    new Filter("key-name", Collections.singletonList(keyName)),
-                    new Filter("tag:Name", Collections.singletonList(name)));
-        } else {
-            return lookupServiceByFilter(this.ec2Endpoint,
-                    new Filter("tag:Name", Collections.singletonList(name)));
-        }
+        return lookupServiceByFilter(this.ec2Endpoint, new Filter("tag:Name", Collections.singletonList(name)));
     }
 
 
@@ -199,5 +181,3 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
         }
     }
 }
-
-
