@@ -1,6 +1,5 @@
 # Discovery Service
-Vert.x service for processing site impressions and impressions imports
-
+Vert.x service for service discovery.
 
 In order to run the tests you will need a few things.
 
