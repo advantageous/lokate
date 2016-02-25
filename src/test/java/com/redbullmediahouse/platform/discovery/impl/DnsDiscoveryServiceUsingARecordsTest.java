@@ -25,23 +25,19 @@ public class DnsDiscoveryServiceUsingARecordsTest {
 
     @Rule
     public final RunTestOnContext rule = new RunTestOnContext();
-    private final String dnsHost = "ns-171.awsdns-21.com";
-    private final int dnsPort = 53;
     private final Map<String, Integer> nameToPorts = new HashMap<String, Integer>() {
         {
             this.put("cassandra", 9042);
-            this.put("api1", 100);
+            this.put("ipsec1", 100);
         }
     };
-    private Vertx vertx;
     private DnsDiscoveryServiceUsingARecords dnsDiscoveryService;
 
     @Before
-    public void setupVerticle(final TestContext context) throws Exception {
-        vertx = rule.vertx();
-
+    public void setupVerticle() throws Exception {
+        final Vertx vertx = rule.vertx();
         dnsDiscoveryService = new DnsDiscoveryServiceUsingARecords(vertx,
-                ".rbtv.preprod.data.metriculo.us", dnsHost, dnsPort, nameToPorts);
+                ".rbss.staging.rbmhops.net", "ns-620.awsdns-13.net", 53, nameToPorts);
     }
 
     @Test
@@ -78,8 +74,9 @@ public class DnsDiscoveryServiceUsingARecordsTest {
 
         final Async async = context.async();
 
-        dnsDiscoveryService.lookupServiceByName("api1",
+        dnsDiscoveryService.lookupServiceByName("ipsec1",
                 serviceDefinitionAsyncResult -> {
+                    context.assertTrue(serviceDefinitionAsyncResult.succeeded());
                     context.assertEquals(100, serviceDefinitionAsyncResult.result().getPort());
                     async.complete();
                 });
@@ -106,7 +103,7 @@ public class DnsDiscoveryServiceUsingARecordsTest {
 
         final Async async = context.async();
 
-        dnsDiscoveryService.lookupServiceByNameAndContainerPort("api1", 101,
+        dnsDiscoveryService.lookupServiceByNameAndContainerPort("ipsec1", 101,
                 serviceDefinitionAsyncResult -> {
                     context.assertEquals(101, serviceDefinitionAsyncResult.result().getPort());
                     async.complete();

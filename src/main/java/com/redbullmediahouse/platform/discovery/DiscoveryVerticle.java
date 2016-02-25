@@ -6,7 +6,9 @@ import com.redbullmediahouse.platform.discovery.impl.DockerDiscoveryService;
 import com.redbullmediahouse.platform.discovery.impl.MarathonDiscoveryService;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import io.vertx.serviceproxy.ProxyHelper;
 
 import java.net.URI;
@@ -16,6 +18,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.redbullmediahouse.platform.config.VertxFromConfig.readVertxOptions;
 
 /**
  * Verticle for service discovery.
@@ -46,22 +49,20 @@ public class DiscoveryVerticle extends AbstractVerticle {
                 this.put("marathon", cfg -> new MarathonDiscoveryService(vertx, cfg));
                 /* Amazon */
                 this.put("amazon-ec2", cfg -> new AmazonEc2DiscoveryService(vertx, cfg));
-
             }
         });
     }
 
-    public static void runVerticle(final Vertx vertx, final DeploymentOptions deploymentOptions,
-                                   final Handler<AsyncResult<String>> handler) {
-
-        vertx.deployVerticle(new DiscoveryVerticle(vertx), deploymentOptions, handler);
+    public static void main(String[] args) {
+        final Vertx vertx = Vertx.vertx(readVertxOptions("com.redbullmediahouse.platform.discovery"));
+        vertx.deployVerticle(new DiscoveryVerticle(vertx));
     }
 
     @Override
     public void start(final Future<Void> startFuture) throws Exception {
 
         try {
-            final Config config =  ConfigFactory.load().getConfig(this.getClass().getPackage().getName());
+            final Config config = ConfigFactory.load().getConfig(this.getClass().getPackage().getName());
 
             final List<String> providers = config.getStringList("providers");
             final List<DiscoveryService> services = providers.stream().map(providerName ->

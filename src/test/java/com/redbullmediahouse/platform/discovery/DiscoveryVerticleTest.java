@@ -60,7 +60,7 @@ public class DiscoveryVerticleTest {
         final Async async = context.async();
 
         final DiscoveryService discoveryService = createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
-        discoveryService.lookupServiceByName("api1", event -> { //
+        discoveryService.lookupServiceByName("ipsec1", event -> { //
             context.assertTrue(event.succeeded());
             context.assertNotNull(event.result());
             context.assertEquals(100, event.result().getPort());

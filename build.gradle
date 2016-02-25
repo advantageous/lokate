@@ -14,7 +14,7 @@ plugins {
     id "net.saliman.cobertura" version "2.3.0"
     id 'com.github.johnrengelman.shadow' version '1.2.3'
     id 'idea'
-    id 'org.ensime.gradle' version '0.2.3'
+    id "maven"
 }
 
 ext {
@@ -24,7 +24,7 @@ ext {
 
 apply plugin: 'docker'
 
-group 'com.redbullsoundselect'
+group 'com.redbullmediahouse.platform'
 version '0.2.0'
 
 docker {
@@ -34,17 +34,17 @@ docker {
 
 task buildDocker(type: Docker) {
 
-    tagVersion = System.getenv("BUILD_NUMBER") ?: project.version
+    tagVersion = project.version
     push = Boolean.getBoolean("docker.push")
-    applicationName = project.applicationName
+    applicationName = project.name
 
     addFile {
         from "${project.shadowJar.outputs.files.singleFile}"
-        into "/opt/rbss/"
+        into "/opt/rbmh/"
     }
     exposePort 8080
     entryPoint = ["sh", "-c"]
-    defaultCommand = ["java -jar /opt/rbss/${project.name}-${project.version}-fat.jar"]
+    defaultCommand = ["java -jar /opt/rbmh/${project.name}-${project.version}-fat.jar"]
 
 }
 
@@ -63,12 +63,10 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/libs-release/' }
-    maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/libs-snapshot/' }
-    maven { url = 'http://oss.sonatype.org/content/repositories/snapshots/' }
 }
 
 sourceCompatibility = '1.8'
-mainClassName = 'com.redbullsoundselect.impressions.ImpressionVerticle'
+mainClassName = 'com.redbullmediahouse.platform.discovery.DiscoveryVerticle'
 
 dependencies {
     compile "ch.qos.logback:logback-core:1.1.3"
@@ -80,9 +78,8 @@ dependencies {
     compile "io.vertx:vertx-codegen:$vertxVersion"
     compile "io.vertx:vertx-service-proxy:$vertxVersion"
     compile "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
-    compile 'com.typesafe:config:1.3.0'
+    compile 'com.redbullmediahouse.platform:rbmh-config-utils:0.2.1'
     compile 'com.amazonaws:aws-java-sdk-ec2:1.10.51'
-    compile 'com.datastax.cassandra:cassandra-driver-core:3.0.0'
     testCompile "io.vertx:vertx-unit:$vertxVersion"
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
@@ -144,13 +141,12 @@ copyNodePackage.dependsOn generateNodePackage
 build.dependsOn copyNodePackage
 
 task generateMesosDeploy() << {
-    def shortSha = "$System.env.SHORT_SHA"
     new File("${buildDir}/mesos.deploy.json").newWriter().withWriter { w ->
         w << """{
     "container": {
         "type": "DOCKER",
         "docker": {
-            "image": "rbmh-docker.docker.rbmhops.net/discovery-service:$shortSha",
+            "image": "rbmh-docker.docker.rbmhops.net/discovery-service:$project.version",
             "network": "BRIDGE",
             "portMappings": [
                 {
@@ -164,8 +160,8 @@ task generateMesosDeploy() << {
     },
     "id": "${project.name}",
     "instances": 1,
-    "cpus": 1,
-    "mem": 512,
+    "cpus": .25,
+    "mem": 128,
     "uris": []
 }
 """
@@ -184,3 +180,17 @@ task itest(type: Test) {
     }
 }
 
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
