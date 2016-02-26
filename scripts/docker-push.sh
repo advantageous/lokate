@@ -5,8 +5,8 @@ if [[ `uname` == 'Darwin' ]]; then
 fi
 
 # Get the project version from the manifest that we generated when making the jar.
-export VER=`grep Project-Version build/tmp/shadowJar/MANIFEST.MF | awk '{print $2}'`
-export NAME=`grep Project-Name build/tmp/jar/MANIFEST.MF | awk '{print $2}'`
+PROJECT_VERSION=`grep Project-Version build/tmp/jar/MANIFEST.MF | awk '{print $2}' | tr -dc '[:alnum:]\.'`
+PROJECT_NAME=`grep Project-Name build/tmp/jar/MANIFEST.MF | awk '{print $2}' | tr -dc '[:alnum:]\.'`
 
 # Finally we can push the tagged image
-docker push rbmh-docker.docker.rbmhops.net/${NAME}:${VER}
+docker push rbmh-docker.docker.rbmhops.net/${PROJECT_NAME}:${PROJECT_VERSION}

@@ -183,12 +183,13 @@ CMD ["/${project.name}-${project.version}/bin/${project.name}"]
 """
     }
 }
+generateDockerFile.dependsOn jar
 
 task buildDocker(type:Exec) {
     commandLine 'scripts/docker-build.sh'
 }
 buildDocker.dependsOn generateDockerFile
-buildDocker.dependsOn jar
+buildDocker.dependsOn distTar
 
 task pushDocker(type:Exec) {
     commandLine 'scripts/docker-push.sh'
