@@ -143,13 +143,9 @@ task generateMesosDeploy() << {
     }
 }
 
-task initDocker(type:Exec) {
-    commandLine 'source scripts/docker-init.sh'
-}
 task startTestDocker(type:Exec) {
     commandLine 'scripts/docker-start-test-containers.sh'
 }
-startTestDocker.dependsOn initDocker
 test.dependsOn startTestDocker
 
 task stopTestDocker(type:Exec) {

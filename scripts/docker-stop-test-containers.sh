@@ -1,7 +1,8 @@
 #!/bin/sh
 
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/docker-init.sh
+
 if [[ `uname` == 'Darwin' ]]; then
-    eval "$(docker-machine env default)"
     docker stop docker-http
     docker rm docker-http
 fi

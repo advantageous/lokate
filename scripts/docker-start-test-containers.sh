@@ -1,7 +1,8 @@
 #!/bin/sh
 
+source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"/docker-init.sh
+
 if [[ `uname` == 'Darwin' ]]; then
-    eval "$(docker-machine env default)"
     docker run -d -p 2375:2375 --volume=/var/run/docker.sock:/var/run/docker.sock --name=docker-http sequenceiq/socat
 fi
 
