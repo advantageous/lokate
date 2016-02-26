@@ -99,16 +99,6 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.11'
 }
 
-task startDocker(type:Exec) {
-    commandLine 'scripts/init-docker.sh'
-}
-test.dependsOn startDocker
-
-task stopDocker(type:Exec) {
-    commandLine 'scripts/shutdown-docker.sh'
-}
-test.finalizedBy stopDocker
-
 task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
     doFirst {
         new File(jsOutDir).mkdirs()
@@ -178,6 +168,21 @@ task generateMesosDeploy() << {
     }
 }
 
+task initDocker(type:Exec) {
+    commandLine 'scripts/docker-init.sh'
+}
+buildDocker.dependsOn initDocker
+task startTestDocker(type:Exec) {
+    commandLine 'scripts/docker-start-test-containers.sh'
+}
+startTestDocker.dependsOn initDocker
+test.dependsOn startTestDocker
+
+task stopTestDocker(type:Exec) {
+    commandLine 'scripts/docker-stop-test-containers.sh'
+}
+test.finalizedBy stopTestDocker
+
 test {
     useJUnit {
         includeCategories 'com.redbullmediahouse.platform.UnitTests'
@@ -189,8 +194,8 @@ task itest(type: Test) {
         includeCategories 'com.redbullmediahouse.platform.IntegrationTests'
     }
 }
-itest.finalizedBy stopDocker
-itest.dependsOn startDocker
+itest.finalizedBy stopTestDocker
+itest.dependsOn startTestDocker
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'

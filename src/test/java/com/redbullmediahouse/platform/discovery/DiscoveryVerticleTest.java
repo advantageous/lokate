@@ -81,7 +81,6 @@ public class DiscoveryVerticleTest {
         });
     }
 
-
     @Test
     public void testAmazonEC2Lookup(final TestContext context) throws Exception {
 
