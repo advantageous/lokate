@@ -27,7 +27,7 @@ import static com.redbullmediahouse.platform.config.VertxFromConfig.readVertxOpt
  */
 public class DiscoveryVerticle extends AbstractVerticle {
 
-    public static final String SERVICE_ADDRESS = "discovery-service";
+    public static final String SERVICE_ADDRESS = "v1/discovery-service";
     private static final String CONFIG_NAMESPACE = DiscoveryVerticle.class.getPackage().getName();
 
     private final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders;

@@ -9,6 +9,10 @@ import java.util.TreeMap;
 public class ServiceDefinition {
 
     private final String address;
+
+    /**
+     * The port for the service.  If there is no public port for this service, this is set to -1.
+     */
     private final int port;
 
     public ServiceDefinition() {
@@ -26,9 +30,9 @@ public class ServiceDefinition {
         this.port = jsonObject.getInteger("port");
     }
 
-    public ServiceDefinition(final String address, final int port) {
+    public ServiceDefinition(final String address, final Integer port) {
         this.address = address;
-        this.port = port;
+        this.port = port != null ? port : -1;
     }
 
     public JsonObject toJson() {

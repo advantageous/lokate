@@ -45,10 +45,10 @@ public class DiscoveryVerticleTest {
         final Async async = context.async();
 
         final DiscoveryService discoveryService = createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
-        discoveryService.lookupServiceByName("cassandra", event -> {
+        discoveryService.lookupServiceByName("httpd", event -> {
             context.assertTrue(event.succeeded());
             context.assertNotNull(event.result());
-            context.assertTrue(event.result().getPort() > 10_000);
+            context.assertNotNull(event.result().getAddress());
             async.complete();
         });
     }

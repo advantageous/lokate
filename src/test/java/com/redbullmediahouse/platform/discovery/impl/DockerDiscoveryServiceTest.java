@@ -35,7 +35,7 @@ public class DockerDiscoveryServiceTest {
 
         AtomicReference<AsyncResult<ServiceDefinition>> resultAtomicReference = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
-        discoveryService.lookupServiceByName("cassandra", serviceDefinitionAsyncResult -> {
+        discoveryService.lookupServiceByName("httpd", serviceDefinitionAsyncResult -> {
             resultAtomicReference.set(serviceDefinitionAsyncResult);
             latch.countDown();
         });
@@ -54,7 +54,7 @@ public class DockerDiscoveryServiceTest {
 
         AtomicReference<AsyncResult<ServiceDefinition>> resultAtomicReference = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
-        discoveryService.lookupServiceByNameAndContainerPort("cassandra", 9042, serviceDefinitionAsyncResult -> {
+        discoveryService.lookupServiceByNameAndContainerPort("httpd", 80, serviceDefinitionAsyncResult -> {
             resultAtomicReference.set(serviceDefinitionAsyncResult);
             latch.countDown();
         });

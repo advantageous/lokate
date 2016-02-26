@@ -99,6 +99,16 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.11'
 }
 
+task startDocker(type:Exec) {
+    commandLine 'scripts/init-docker.sh'
+}
+test.dependsOn startDocker
+
+task stopDocker(type:Exec) {
+    commandLine 'scripts/shutdown-docker.sh'
+}
+test.finalizedBy stopDocker
+
 task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
     doFirst {
         new File(jsOutDir).mkdirs()
@@ -146,7 +156,7 @@ task generateMesosDeploy() << {
     "container": {
         "type": "DOCKER",
         "docker": {
-            "image": "rbmh-docker.docker.rbmhops.net/discovery-service:$project.version",
+            "image": "rbmh-docker.docker.rbmhops.net/${project.name}:$project.version",
             "network": "BRIDGE",
             "portMappings": [
                 {
@@ -160,7 +170,7 @@ task generateMesosDeploy() << {
     },
     "id": "${project.name}",
     "instances": 1,
-    "cpus": .25,
+    "cpus": ".25",
     "mem": 128,
     "uris": []
 }
@@ -179,6 +189,8 @@ task itest(type: Test) {
         includeCategories 'com.redbullmediahouse.platform.IntegrationTests'
     }
 }
+itest.finalizedBy stopDocker
+itest.dependsOn startDocker
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
