@@ -12,7 +12,6 @@ plugins {
     id 'java'
     id 'application'
     id "net.saliman.cobertura" version "2.3.0"
-    id 'com.github.johnrengelman.shadow' version '1.2.3'
     id 'idea'
     id "maven"
 }
@@ -22,31 +21,8 @@ ext {
     jsOutDir = "${projectDir}/build/generated"
 }
 
-apply plugin: 'docker'
-
 group 'com.redbullmediahouse.platform'
 version '0.2.0'
-
-docker {
-    baseImage "vertx/vertx3-exec"
-    maintainer 'Geoff Chandler "geoff.chandler@us.redbullmediahouse.com"'
-}
-
-task buildDocker(type: Docker) {
-
-    tagVersion = project.version
-    push = Boolean.getBoolean("docker.push")
-    applicationName = project.name
-
-    addFile {
-        from "${project.shadowJar.outputs.files.singleFile}"
-        into "/opt/rbmh/"
-    }
-    exposePort 8080
-    entryPoint = ["sh", "-c"]
-    defaultCommand = ["java -jar /opt/rbmh/${project.name}-${project.version}-fat.jar"]
-
-}
 
 sourceSets {
     generated {
@@ -84,19 +60,18 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-/* used to create the fat jar files. */
-shadowJar {
-    classifier = 'fat'
-    manifest {
-        attributes(
-                "Project-Version": project.version
-        )
-    }
-}
-build.dependsOn shadowJar
-
 task wrapper(type: Wrapper) {
     gradleVersion = '2.11'
+}
+
+/* used to create the fat jar files. */
+jar {
+    manifest {
+        attributes(
+                "Project-Version": project.version,
+                "Project-Name": project.name
+        )
+    }
 }
 
 task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
@@ -169,9 +144,8 @@ task generateMesosDeploy() << {
 }
 
 task initDocker(type:Exec) {
-    commandLine 'scripts/docker-init.sh'
+    commandLine 'source scripts/docker-init.sh'
 }
-buildDocker.dependsOn initDocker
 task startTestDocker(type:Exec) {
     commandLine 'scripts/docker-start-test-containers.sh'
 }
@@ -196,6 +170,30 @@ task itest(type: Test) {
 }
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
+
+task generateDockerFile() << {
+    new File("${buildDir}/Dockerfile").newWriter().withWriter { w ->
+        w << """
+FROM vertx/vertx3-exec
+MAINTAINER Geoff Chandler "geoff.chandler@us.redbullmediahouse.com"
+ADD distributions/${project.name}-${project.version}.tar /
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c"]
+CMD ["/${project.name}-${project.version}/bin/${project.name}"]
+"""
+    }
+}
+
+task buildDocker(type:Exec) {
+    commandLine 'scripts/docker-build.sh'
+}
+buildDocker.dependsOn generateDockerFile
+buildDocker.dependsOn jar
+
+task pushDocker(type:Exec) {
+    commandLine 'scripts/docker-push.sh'
+}
+pushDocker.dependsOn buildDocker
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
