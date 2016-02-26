@@ -72,7 +72,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
             vertxOptions.setClusterManager(new ZookeeperClusterManager(zkProperties));
         }
 
-        final Vertx vertx = Vertx.vertx();
+        final Vertx vertx = Vertx.vertx(vertxOptions);
         vertx.deployVerticle(new DiscoveryVerticle(vertx));
     }
 
