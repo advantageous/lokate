@@ -17,17 +17,15 @@ public class ServiceDefinition {
 
     public ServiceDefinition() {
         this.address = null;
-        this.port = 0;
+        this.port = -1;
     }
 
     public ServiceDefinition(final ServiceDefinition serviceDefinition) {
-        this.address = serviceDefinition.getAddress();
-        this.port = serviceDefinition.getPort();
+        this(serviceDefinition.getAddress(), serviceDefinition.getPort());
     }
 
     public ServiceDefinition(final JsonObject jsonObject) {
-        this.address = jsonObject.getString("address");
-        this.port = jsonObject.getInteger("port");
+        this(jsonObject.getString("address"), jsonObject.getInteger("port"));
     }
 
     public ServiceDefinition(final String address, final Integer port) {
