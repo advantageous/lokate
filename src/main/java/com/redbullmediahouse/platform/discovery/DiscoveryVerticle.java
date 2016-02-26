@@ -1,6 +1,7 @@
 package com.redbullmediahouse.platform.discovery;
 
 import com.redbullmediahouse.platform.config.ConfigUtils;
+import com.redbullmediahouse.platform.config.ZooKeeperConfig;
 import com.redbullmediahouse.platform.discovery.impl.AmazonEc2DiscoveryService;
 import com.redbullmediahouse.platform.discovery.impl.DnsDiscoveryServiceUsingARecords;
 import com.redbullmediahouse.platform.discovery.impl.DockerDiscoveryService;
@@ -9,16 +10,23 @@ import com.typesafe.config.Config;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.serviceproxy.ProxyHelper;
+import io.vertx.spi.cluster.impl.zookeeper.ZookeeperClusterManager;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.redbullmediahouse.platform.config.ConfigUtils.getConfig;
 import static com.redbullmediahouse.platform.config.VertxFromConfig.readVertxOptions;
+
+
+import static com.redbullmediahouse.platform.config.ZooKeeperConfig.zookeeperConfig;
 
 /**
  * Verticle for service discovery.
@@ -55,7 +63,16 @@ public class DiscoveryVerticle extends AbstractVerticle {
     }
 
     public static void main(String[] args) {
-        final Vertx vertx = Vertx.vertx(readVertxOptions(CONFIG_NAMESPACE));
+        final VertxOptions vertxOptions = readVertxOptions(CONFIG_NAMESPACE);
+
+        if (vertxOptions.isClustered()) {
+            final Config config = getConfig(CONFIG_NAMESPACE);
+            final ZooKeeperConfig zooKeeperConfig = zookeeperConfig(config.getConfig("zookeeper"));
+            final Properties zkProperties = zooKeeperConfig.toVerrxProperties();
+            vertxOptions.setClusterManager(new ZookeeperClusterManager(zkProperties));
+        }
+
+        final Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new DiscoveryVerticle(vertx));
     }
 
