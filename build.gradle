@@ -55,7 +55,8 @@ dependencies {
     compile "io.vertx:vertx-service-proxy:$vertxVersion"
     compile "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
     compile "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
-    compile 'com.redbullmediahouse.platform:rbmh-config-utils:0.2.1'
+    compile 'com.redbullmediahouse.platform:rbmh-config-utils:0.2.2'
+    compile 'io.vertx:vertx-zookeeper:3.2.0'
     compile 'com.amazonaws:aws-java-sdk-ec2:1.10.51'
     testCompile "io.vertx:vertx-unit:$vertxVersion"
     testCompile group: 'junit', name: 'junit', version: '4.11'
