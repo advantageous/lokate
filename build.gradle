@@ -17,7 +17,7 @@ plugins {
 }
 
 ext {
-    vertxVersion = '3.2.0'
+    vertxVersion = '3.2.1'
     jsOutDir = "${projectDir}/build/generated"
 }
 
@@ -54,6 +54,7 @@ dependencies {
     compile "io.vertx:vertx-codegen:$vertxVersion"
     compile "io.vertx:vertx-service-proxy:$vertxVersion"
     compile "io.vertx:vertx-tcp-eventbus-bridge:$vertxVersion"
+    compile "io.vertx:vertx-dropwizard-metrics:$vertxVersion"
     compile 'com.redbullmediahouse.platform:rbmh-config-utils:0.2.1'
     compile 'com.amazonaws:aws-java-sdk-ec2:1.10.51'
     testCompile "io.vertx:vertx-unit:$vertxVersion"
