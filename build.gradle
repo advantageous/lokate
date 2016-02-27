@@ -118,7 +118,7 @@ copyNodePackage.dependsOn generateNodePackage
 build.dependsOn copyNodePackage
 
 task generateMesosDeploy() << {
-    new File("${buildDir}/mesos.deploy.json").newWriter().withWriter { w ->
+    new File("${buildDir}/mesos-deploy-staging.json").newWriter().withWriter { w ->
         w << """{
     "container": {
         "type": "DOCKER",
