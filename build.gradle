@@ -1,3 +1,7 @@
+import groovyx.net.http.HTTPBuilder
+import groovyx.net.http.Method
+import org.apache.http.entity.FileEntity
+
 buildscript {
     repositories {
         mavenCentral()
@@ -5,6 +9,8 @@ buildscript {
     }
     dependencies {
         classpath 'se.transmode.gradle:gradle-docker:1.2'
+        classpath 'org.codehaus.groovy.modules.http-builder:http-builder:0.5.2'
+        classpath 'org.apache.httpcomponents:httpclient:4.5.2'
     }
 }
 
@@ -19,6 +25,7 @@ plugins {
 ext {
     vertxVersion = '3.2.1'
     jsOutDir = "${projectDir}/build/generated"
+    envList = ["staging", "preprod", "production"]
 }
 
 group 'com.redbullmediahouse.platform'
@@ -118,39 +125,64 @@ copyNodePackage.dependsOn generateNodePackage
 build.dependsOn copyNodePackage
 
 task generateMesosDeploy() << {
-    new File("${buildDir}/mesos-deploy-staging.json").newWriter().withWriter { w ->
-        w << """{
-    "container": {
-        "type": "DOCKER",
-        "docker": {
-            "image": "rbmh-docker.docker.rbmhops.net/${project.name}:$project.version",
-            "network": "BRIDGE",
-            "portMappings": [
-                {
-                    "containerPort": 8080,
-                    "hostPort": 0,
-                    "servicePort": 0,
-                    "protocol": "tcp"
-                }
-            ]
+
+    envList.each { deploymentEnv ->
+
+        Properties props = new Properties()
+        props.load(new FileInputStream("${project.rootDir}/deployment/${deploymentEnv}.properties"))
+
+        new File("${buildDir}/mesos-deploy-${deploymentEnv}.json").newWriter().withWriter { w ->
+            w << """{
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "rbmh-docker.docker.rbmhops.net/${project.name}:$project.version",
+      "network": "BRIDGE",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 0,
+          "servicePort": 0,
+          "protocol": "tcp"
         }
-    },
-    "id": "${project.name}",
-    "instances": 1,
-    "cpus": ".25",
-    "mem": 128,
-    "uris": []
+      ],
+      "parameters": [
+        {
+          "key": "env",
+          "value": "DEPLOYMENT_ENVIRONMENT=${deploymentEnv}"
+        }
+      ]
+    }
+  },
+  "id": "${project.name}-${deploymentEnv}",
+  "instances": ${props.instances},
+  "cpus": ${props.cpus},
+  "mem": ${props.mem},
+  "uris": []
 }
 """
+        }
     }
 }
+generateMesosDeploy.dependsOn compileJava
 
-task startTestDocker(type:Exec) {
+task publishMesosDeploy() << {
+    envList.each { deploymentEnv ->
+        def http = new HTTPBuilder(
+                "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/${project.name}/${project.version}/deploy-${deploymentEnv}.json")
+        http.request( Method.PUT, "application/json" ) { req ->
+            body = file("${buildDir}/mesos-deploy-${deploymentEnv}.json").text
+        }
+    }
+}
+publishMesosDeploy.dependsOn generateMesosDeploy
+
+task startTestDocker(type: Exec) {
     commandLine 'scripts/docker-start-test-containers.sh'
 }
 test.dependsOn startTestDocker
 
-task stopTestDocker(type:Exec) {
+task stopTestDocker(type: Exec) {
     commandLine 'scripts/docker-stop-test-containers.sh'
 }
 test.finalizedBy stopTestDocker
@@ -183,13 +215,13 @@ CMD ["/${project.name}-${project.version}/bin/${project.name}"]
 }
 generateDockerFile.dependsOn jar
 
-task buildDocker(type:Exec) {
+task buildDocker(type: Exec) {
     commandLine 'scripts/docker-build.sh'
 }
 buildDocker.dependsOn generateDockerFile
 buildDocker.dependsOn distTar
 
-task pushDocker(type:Exec) {
+task pushDocker(type: Exec) {
     commandLine 'scripts/docker-push.sh'
 }
 pushDocker.dependsOn buildDocker
