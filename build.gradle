@@ -169,13 +169,34 @@ generateMesosDeploy.dependsOn compileJava
 task publishMesosDeploy() << {
     envList.each { deploymentEnv ->
         def http = new HTTPBuilder(
-                "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/${project.name}/${project.version}/deploy-${deploymentEnv}.json")
+                "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
+                        "${project.name}/${project.version}/deploy-${deploymentEnv}.json")
         http.request( Method.PUT, "application/json" ) { req ->
             body = file("${buildDir}/mesos-deploy-${deploymentEnv}.json").text
         }
     }
 }
 publishMesosDeploy.dependsOn generateMesosDeploy
+
+
+task publishToMesosStaging() << {
+    def mesosDeploy = new URL( "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
+            "${project.name}/${project.version}/deploy-staging.json" ).text
+
+    println(mesosDeploy)
+
+    def http = new HTTPBuilder(
+            "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps")
+    def request = http.request(Method.POST, "application/json") { req ->
+        body = mesosDeploy
+    }
+
+    
+}
+
+publishToMesosStaging.dependsOn publishMesosDeploy
+
+
 
 task startTestDocker(type: Exec) {
     commandLine 'scripts/docker-start-test-containers.sh'
