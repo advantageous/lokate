@@ -182,21 +182,14 @@ publishMesosDeploy.dependsOn generateMesosDeploy
 task publishToMesosStaging() << {
     def mesosDeploy = new URL( "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
             "${project.name}/${project.version}/deploy-staging.json" ).text
-
-    println(mesosDeploy)
-
+    println("Deploying to staging \n $mesosDeploy")
     def http = new HTTPBuilder(
             "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps")
     def request = http.request(Method.POST, "application/json") { req ->
         body = mesosDeploy
     }
-
-    
 }
-
 publishToMesosStaging.dependsOn publishMesosDeploy
-
-
 
 task startTestDocker(type: Exec) {
     commandLine 'scripts/docker-start-test-containers.sh'
