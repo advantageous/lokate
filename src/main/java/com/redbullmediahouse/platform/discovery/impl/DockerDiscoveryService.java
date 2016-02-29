@@ -102,6 +102,14 @@ public class DockerDiscoveryService implements DiscoveryService {
         final HttpClientRequest request = httpClient.request(HttpMethod.GET, dockerPort,
                 dockerHost, "/containers/json");
 
+
+        if (logger.isInfoEnabled()) {
+            final StringBuilder builder = new StringBuilder();
+            builder.append("curl -H \"Content-type: application/json\" -H \"Accept: application/json\" ")
+                    .append("http://").append(dockerHost).append(":").append(dockerPort).append("/containers/json");
+            logger.info("About to make REST call  \n{}\n", builder.toString());
+        }
+
         request.exceptionHandler(throwable -> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Unable to query docker {} {}", dockerHost, dockerPort);
