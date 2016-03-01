@@ -1,5 +1,6 @@
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
+
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -175,10 +176,9 @@ generateMesosDeploy.dependsOn compileJava
 
 task publishMesosDeploy() << {
     envList.each { deploymentEnv ->
-        def http = new HTTPBuilder(
-                "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
-                        "${project.name}/${project.version}/deploy-${deploymentEnv}.json")
-        http.request( Method.PUT, "application/json" ) { req ->
+        def http = new HTTPBuilder("http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
+                "${project.name}/${project.version}/deploy-${deploymentEnv}.json")
+        http.request(Method.PUT, "application/json") { req ->
             body = file("${buildDir}/mesos-deploy-${deploymentEnv}.json").text
         }
     }
@@ -191,17 +191,16 @@ def deployToStaging(String projectName, String projectVersion,
 
     println("Deploying $projectName $projectVersion to staging")
 
-    def mesosDeploy = new URL( "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
-            "${projectName}/${projectVersion}/deploy-staging.json" ).text
-    def http = new HTTPBuilder(
-            "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps")
+    def mesosDeploy = new URL("http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
+            "${projectName}/${projectVersion}/deploy-staging.json").text
+    def http = new HTTPBuilder("http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps")
     http.request(Method.POST, "application/json") { request ->
         body = mesosDeploy
         response.success = { response, reader ->
 
             if (response.statusLine.statusCode >= 200 && response.statusLine.statusCode < 299) {
-                println("Deploy to staging $projectName $projectVersion worked with code $response.statusLine.statusCode " +
-                        "${response.statusLine.reasonPhrase} ${reader.toString()}")
+                println("Deploy to staging $projectName $projectVersion worked with code " +
+                        "$response.statusLine.statusCode ${response.statusLine.reasonPhrase} ${reader.toString()}")
 
                 done.set(true)
             }
@@ -211,25 +210,22 @@ def deployToStaging(String projectName, String projectVersion,
     }
 }
 
-
 def deleteFromStaging(String projectName, String projectVersion,
                       CountDownLatch countDownLatch, AtomicBoolean done) {
 
     def mesosId = "${project.name}-staging"
-
-    def deleteHttp = new HTTPBuilder(
-            "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps/$mesosId")
+    def deleteHttp = new HTTPBuilder("http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps/$mesosId")
 
     println("Deleting $mesosId from staging")
     deleteHttp.request(Method.DELETE) {
         response.success = { responseDelete, readerDelete ->
             if (responseDelete.statusLine.statusCode >= 200 && responseDelete.statusLine.statusCode < 299) {
                 println("Call to delete $mesosId succeded with code $responseDelete.statusLine.statusCode " +
-                        "${responseDelete.statusLine.reasonPhrase} ${readerDelete.toString()}" )
+                        "${responseDelete.statusLine.reasonPhrase} ${readerDelete.toString()}")
                 deployToStaging(projectName, projectVersion, countDownLatch, done)
             } else {
                 println("Call to delete $mesosId failed with code $responseDelete.statusLine.statusCode " +
-                        "${responseDelete.statusLine.reasonPhrase} ${readerDelete.toString()}" )
+                        "${responseDelete.statusLine.reasonPhrase} ${readerDelete.toString()}")
                 countDownLatch.countDown()
             }
         }
@@ -237,13 +233,12 @@ def deleteFromStaging(String projectName, String projectVersion,
 }
 
 task publishToMesosStaging() << {
+
     def mesosId = "${project.name}-staging"
+    def checkDeployHttp = new HTTPBuilder("http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps/")
 
-    def checkDeployHttp = new HTTPBuilder(
-            "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps/")
-
-    CountDownLatch countDownLatch = new CountDownLatch(1);
-    AtomicBoolean done = new AtomicBoolean();
+    CountDownLatch countDownLatch = new CountDownLatch(1)
+    AtomicBoolean done = new AtomicBoolean()
 
     checkDeployHttp.request(Method.GET, "application/json") { req ->
         response.success = { response, reader ->
@@ -260,7 +255,6 @@ task publishToMesosStaging() << {
     countDownLatch.await(30, TimeUnit.SECONDS)
 
     if (!done.get()) {
-
         println("We were unable to deploy to staging, check logs $mesosId")
         throw new IllegalStateException("We were unable to deploy to staging, check logs $mesosId")
     }
