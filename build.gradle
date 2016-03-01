@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 buildscript {
     repositories {
+        mavenLocal()
         mavenCentral()
         jcenter()
     }
@@ -13,6 +14,7 @@ buildscript {
         classpath 'se.transmode.gradle:gradle-docker:1.2'
         classpath 'org.codehaus.groovy.modules.http-builder:http-builder:0.5.2'
         classpath 'org.apache.httpcomponents:httpclient:4.5.2'
+        classpath 'com.rbmh.rbss:rbss-platform-deploy-gradle-plugin:1.0.0'
     }
 }
 
@@ -23,6 +25,9 @@ plugins {
     id 'idea'
     id "maven"
 }
+
+apply plugin: 'com.rbmh.rbss.rbss-platform-deploy-gradle-plugin'
+
 
 ext {
     vertxVersion = '3.2.1'
