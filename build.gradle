@@ -188,14 +188,18 @@ def deployToStaging(String projectName, String projectVersion,
 
     def mesosDeploy = new URL( "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
             "${projectName}/${projectVersion}/deploy-staging.json" ).text
-    println("Deploying to staging \n $mesosDeploy")
     def http = new HTTPBuilder(
             "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps")
     http.request(Method.POST, "application/json") { request ->
         body = mesosDeploy
         response.success = { response, reader ->
 
-            done.set(true)
+            if (response.statusLine.statusCode >= 200 && response.statusLine.statusCode < 299) {
+                println("Deploy to staging $projectName $projectVersion worked with code $response.statusLine.statusCode " +
+                        "${response.statusLine.reasonPhrase} ${reader.toString()}")
+
+                done.set(true)
+            }
             countDownLatch.countDown()
 
         }
