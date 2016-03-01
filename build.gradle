@@ -26,7 +26,16 @@ ext {
 }
 
 group 'com.redbullmediahouse.platform'
-version '0.2.0'
+version '0.2.' + versionDate()
+
+/*
+TODO: put this in the plugin
+ */
+def versionDate() {
+    def date = new Date()
+    def formattedDate = date.format('yyyyMMddHHmmss')
+    return formattedDate
+}
 
 sourceSets {
     generated {
