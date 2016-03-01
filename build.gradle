@@ -179,15 +179,58 @@ task publishMesosDeploy() << {
 publishMesosDeploy.dependsOn generateMesosDeploy
 
 
-task publishToMesosStaging() << {
+def deployToStaging(String projectName, String projectVersion) {
+
+    println("Deploying $projectName $projectVersion to staging")
+
     def mesosDeploy = new URL( "http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/rbmh-mesos/" +
-            "${project.name}/${project.version}/deploy-staging.json" ).text
+            "${projectName}/${projectVersion}/deploy-staging.json" ).text
     println("Deploying to staging \n $mesosDeploy")
     def http = new HTTPBuilder(
             "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps")
-    def request = http.request(Method.POST, "application/json") { req ->
+    http.request(Method.POST, "application/json") { request ->
         body = mesosDeploy
     }
+}
+
+
+def deleteFromStaging(String projectName, String projectVersion) {
+
+    def mesosId = "${project.name}-staging"
+
+    def deleteHttp = new HTTPBuilder(
+            "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps/$mesosId")
+
+    println("Deleting $mesosId from staging")
+    deleteHttp.request(Method.DELETE) {
+        response.success = { responseDelete, readerDelete ->
+            if (responseDelete.statusLine.statusCode > 200 && responseDelete.statusLine.statusCode < 299) {
+                deployToStaging(projectName, projectVersion)
+            }
+        }
+    }
+}
+
+task publishToMesosStaging() << {
+    def mesosId = "${project.name}-staging"
+
+    def checkDeployHttp = new HTTPBuilder(
+            "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps/")
+
+    checkDeployHttp.request(Method.GET, "application/json") { req ->
+        response.success = { response, reader ->
+            if (reader.toString().contains(mesosId)) {
+                println("Found mesosId $mesosId")
+                deleteFromStaging(project.name, project.version)
+            } else {
+                println("Did not find  mesosId $mesosId")
+                deployToStaging(project.name, project.version)
+            }
+        }
+    }
+
+    sleep(5000)
+
 }
 publishToMesosStaging.dependsOn publishMesosDeploy
 
