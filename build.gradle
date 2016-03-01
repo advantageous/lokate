@@ -214,8 +214,14 @@ def deleteFromStaging(String projectName, String projectVersion,
     println("Deleting $mesosId from staging")
     deleteHttp.request(Method.DELETE) {
         response.success = { responseDelete, readerDelete ->
-            if (responseDelete.statusLine.statusCode > 200 && responseDelete.statusLine.statusCode < 299) {
+            if (responseDelete.statusLine.statusCode >= 200 && responseDelete.statusLine.statusCode < 299) {
+                println("Call to delete $mesosId succeded with code $responseDelete.statusLine.statusCode " +
+                        "${responseDelete.statusLine.reasonPhrase} ${readerDelete.toString()}" )
                 deployToStaging(projectName, projectVersion, countDownLatch, done)
+            } else {
+                println("Call to delete $mesosId failed with code $responseDelete.statusLine.statusCode " +
+                        "${responseDelete.statusLine.reasonPhrase} ${readerDelete.toString()}" )
+                countDownLatch.countDown()
             }
         }
     }
