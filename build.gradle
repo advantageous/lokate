@@ -83,36 +83,15 @@ jar {
     }
 }
 
-task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
-    doFirst {
-        new File(jsOutDir).mkdirs()
-    }
-    source = sourceSets.main.java // input source set
-    classpath = configurations.compile //+ configurations.vertx // add processor module to classpath
-    // specify javac arguments
-    options.compilerArgs = [
-            "-proc:only",
-            "-processor", "io.vertx.codegen.CodeGenProcessor", // vertx processor here
-            "-AoutputDirectory=${jsOutDir}"
-    ]
-    // specify output of generated code
-    destinationDir = file("${projectDir}/src/generated/java")
-}
 
 compileJava {
     dependsOn(generateProxies)
     source += sourceSets.generated.java
 }
 
-generateNodePackage.dependsOn generateProxies
 
-task copyNodePackage(type: Copy) {
-    from "${jsOutDir}/resources/"
-    into buildDir
-}
-copyNodePackage.dependsOn generateNodePackage
 
-build.dependsOn copyNodePackage
+//build.dependsOn copyNodePackage
 
 
 task startTestDocker(type: Exec) {
@@ -139,7 +118,6 @@ task itest(type: Test) {
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
 
-generateDockerFile.dependsOn jar
 
 task buildDocker(type: Exec) {
     commandLine 'scripts/docker-build.sh'
