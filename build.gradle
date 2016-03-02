@@ -62,6 +62,9 @@ dependencies {
     compile 'com.redbullmediahouse.platform:rbmh-config-utils:0.2.2'
     compile 'io.vertx:vertx-zookeeper:3.2.0'
     compile 'com.amazonaws:aws-java-sdk-ec2:1.10.51'
+    compile 'org.apache.curator:curator-client:2.10.0'
+    compile 'org.apache.curator:curator-framework:2.10.0'
+    compile 'org.apache.curator:curator-recipes:2.10.0'
     testCompile "io.vertx:vertx-unit:$vertxVersion"
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
