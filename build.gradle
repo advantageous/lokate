@@ -69,11 +69,8 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.11'
-}
 
-/* used to create the fat jar files. */
+
 jar {
     manifest {
         attributes(
@@ -84,31 +81,16 @@ jar {
 }
 
 
-compileJava {
-    dependsOn(generateProxies)
-    source += sourceSets.generated.java
-}
 
-
-
-//build.dependsOn copyNodePackage
-
-
-task startTestDocker(type: Exec) {
-    commandLine 'scripts/docker-start-test-containers.sh'
-}
-test.dependsOn startTestDocker
-
-task stopTestDocker(type: Exec) {
-    commandLine 'scripts/docker-stop-test-containers.sh'
-}
-test.finalizedBy stopTestDocker
 
 test {
     useJUnit {
         includeCategories 'com.redbullmediahouse.platform.UnitTests'
     }
 }
+
+compileJava.source += project.sourceSets.generated.java
+
 
 task itest(type: Test) {
     useJUnit {
@@ -118,27 +100,6 @@ task itest(type: Test) {
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
 
-
-task buildDocker(type: Exec) {
-    commandLine 'scripts/docker-build.sh'
-}
-buildDocker.dependsOn generateDockerFile
-buildDocker.dependsOn distTar
-
-task pushDocker(type: Exec) {
-    commandLine 'scripts/docker-push.sh'
-}
-pushDocker.dependsOn buildDocker
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
 
 artifacts {
     archives sourcesJar
