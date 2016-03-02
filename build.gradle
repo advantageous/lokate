@@ -101,7 +101,17 @@ itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
 
 
+dockerContainers  {
+    socat {
+
+    }
+    httpd {
+
+    }
+}
+
 artifacts {
     archives sourcesJar
     archives javadocJar
 }
+
