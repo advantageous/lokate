@@ -71,15 +71,15 @@ dependencies {
     compile 'com.redbullmediahouse.platform:rbmh-config-utils:0.2.2'
     compile 'io.vertx:vertx-zookeeper:3.2.0'
     compile 'com.amazonaws:aws-java-sdk-ec2:1.10.51'
+    compile 'org.apache.curator:curator-client:2.10.0'
+    compile 'org.apache.curator:curator-framework:2.10.0'
+    compile 'org.apache.curator:curator-recipes:2.10.0'
     testCompile "io.vertx:vertx-unit:$vertxVersion"
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.11'
-}
 
-/* used to create the fat jar files. */
+
 jar {
     manifest {
         attributes(
@@ -89,56 +89,17 @@ jar {
     }
 }
 
-task generateProxies(type: JavaCompile, group: 'build', description: 'Generates the Vertx proxies') {
-    doFirst {
-        new File(jsOutDir).mkdirs()
-    }
-    source = sourceSets.main.java // input source set
-    classpath = configurations.compile //+ configurations.vertx // add processor module to classpath
-    // specify javac arguments
-    options.compilerArgs = [
-            "-proc:only",
-            "-processor", "io.vertx.codegen.CodeGenProcessor", // vertx processor here
-            "-AoutputDirectory=${jsOutDir}"
-    ]
-    // specify output of generated code
-    destinationDir = file("${projectDir}/src/generated/java")
-}
 
-compileJava {
-    dependsOn(generateProxies)
-    source += sourceSets.generated.java
-}
 
-generateNodePackage.dependsOn generateProxies
-
-task copyNodePackage(type: Copy) {
-    from "${jsOutDir}/resources/"
-    into buildDir
-}
-copyNodePackage.dependsOn generateNodePackage
-
-build.dependsOn copyNodePackage
-
-generateMesosDeploy.dependsOn compileJava
-publishMesosDeploy.dependsOn generateMesosDeploy
-publishToMesosStaging.dependsOn publishMesosDeploy
-
-task startTestDocker(type: Exec) {
-    commandLine 'scripts/docker-start-test-containers.sh'
-}
-test.dependsOn startTestDocker
-
-task stopTestDocker(type: Exec) {
-    commandLine 'scripts/docker-stop-test-containers.sh'
-}
-test.finalizedBy stopTestDocker
 
 test {
     useJUnit {
         includeCategories 'com.redbullmediahouse.platform.UnitTests'
     }
 }
+
+compileJava.source += project.sourceSets.generated.java
+
 
 task itest(type: Test) {
     useJUnit {
@@ -148,28 +109,6 @@ task itest(type: Test) {
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
 
-generateDockerFile.dependsOn jar
-
-task buildDocker(type: Exec) {
-    commandLine 'scripts/docker-build.sh'
-}
-buildDocker.dependsOn generateDockerFile
-buildDocker.dependsOn distTar
-
-task pushDocker(type: Exec) {
-    commandLine 'scripts/docker-push.sh'
-}
-pushDocker.dependsOn buildDocker
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
 
 artifacts {
     archives sourcesJar
