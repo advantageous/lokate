@@ -114,9 +114,6 @@ copyNodePackage.dependsOn generateNodePackage
 
 build.dependsOn copyNodePackage
 
-generateMesosDeploy.dependsOn compileJava
-publishMesosDeploy.dependsOn generateMesosDeploy
-publishToMesosStaging.dependsOn publishMesosDeploy
 
 task startTestDocker(type: Exec) {
     commandLine 'scripts/docker-start-test-containers.sh'
