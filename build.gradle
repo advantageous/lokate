@@ -26,16 +26,7 @@ ext {
 }
 
 group 'com.redbullmediahouse.platform'
-version '0.2.' + versionDate()
-
-/*
-TODO: put this in the plugin
- */
-def versionDate() {
-    def date = new Date()
-    def formattedDate = date.format('yyyyMMddHHmmss')
-    return formattedDate
-}
+version '0.2.' + new Date().format('yyyyMMddHHmmss')
 
 sourceSets {
     generated {
@@ -78,20 +69,6 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }
 
-
-
-jar {
-    manifest {
-        attributes(
-                "Project-Version": project.version,
-                "Project-Name": project.name
-        )
-    }
-}
-
-
-
-
 test {
     useJUnit {
         includeCategories 'com.redbullmediahouse.platform.UnitTests'
@@ -99,7 +76,6 @@ test {
 }
 
 compileJava.source += project.sourceSets.generated.java
-
 
 task itest(type: Test) {
     useJUnit {
@@ -109,18 +85,17 @@ task itest(type: Test) {
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
 
-
 dockerContainers {
     socat {
         portMapping container: 2375, host: 2375
-        volume  container: "/var/run/docker.sock", host: "/var/run/docker.sock"
+        volume container: "/var/run/docker.sock", host: "/var/run/docker.sock"
         containerName "docker-http"
-        image  "sequenceiq/socat"
+        image "sequenceiq/socat"
     }
     httpd {
-        publishAll  true
-        containerName  "httpd"
-        image  "httpd"
+        publishAll true
+        containerName "httpd"
+        image "httpd"
     }
 }
 
@@ -128,4 +103,3 @@ artifacts {
     archives sourcesJar
     archives javadocJar
 }
-
