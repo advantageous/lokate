@@ -1,4 +1,4 @@
-@ModuleGen(groupPackage = "com.redbullmediahouse.platform.discovery", name = "rbmh-service-discovery-client")
+@ModuleGen(groupPackage = "com.redbullmediahouse.platform.discovery", name = "rbmh-discovery-service-client")
 package com.redbullmediahouse.platform.discovery;
 
 import io.vertx.codegen.annotations.ModuleGen;
