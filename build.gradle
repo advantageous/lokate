@@ -86,12 +86,6 @@ itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
 
 dockerContainers {
-    socat {
-        portMapping container: 2375, host: 2375
-        volume container: "/var/run/docker.sock", host: "/var/run/docker.sock"
-        containerName "docker-http"
-        image "sequenceiq/socat"
-    }
     httpd {
         publishAll true
         containerName "httpd"
