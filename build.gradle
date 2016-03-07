@@ -89,9 +89,7 @@ mesosEnvironments {
         cpus 1
         mem 256
         healthCheck(
-                protocol: "HTTP",
-                portIndex: 0,
-                path: "/",
+                path: "/health/",
                 gracePeriodSeconds: 5,
                 intervalSeconds: 20,
                 maxConsecutiveFailures: 3
@@ -103,9 +101,7 @@ mesosEnvironments {
         cpus 1
         mem 256
         healthCheck(
-                protocol: "HTTP",
-                portIndex: 0,
-                path: "/",
+                path: "/health/",
                 gracePeriodSeconds: 5,
                 intervalSeconds: 20,
                 maxConsecutiveFailures: 3
@@ -117,9 +113,7 @@ mesosEnvironments {
         cpus 1
         mem 256
         healthCheck(
-                protocol: "HTTP",
-                portIndex: 0,
-                path: "/",
+                path: "/health/",
                 gracePeriodSeconds: 5,
                 intervalSeconds: 20,
                 maxConsecutiveFailures: 3
