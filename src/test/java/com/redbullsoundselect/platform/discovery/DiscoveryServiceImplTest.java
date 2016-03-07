@@ -1,6 +1,6 @@
-package com.redbullmediahouse.platform.discovery;
+package com.redbullsoundselect.platform.discovery;
 
-import com.redbullmediahouse.platform.UnitTests;
+import com.redbullsoundselect.platform.UnitTests;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;

@@ -1,7 +1,7 @@
-package com.redbullmediahouse.platform.discovery.impl;
+package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullmediahouse.platform.config.ConfigUtils;
-import com.redbullmediahouse.platform.discovery.ServiceDefinition;
+import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
@@ -22,7 +22,7 @@ public class DockerDiscoveryServiceTest {
     @BeforeClass
     public static void setup() {
         final Config dockerConfig =
-                ConfigUtils.getConfig("com.redbullmediahouse.platform.discovery").getConfig("provider-config.docker");
+                ConfigUtils.getConfig("com.redbullsoundselect.platform.discovery").getConfig("provider-config.docker");
         discoveryService = new DockerDiscoveryService(
                 Vertx.vertx(),
                 URI.create(dockerConfig.getString("host")).getHost(),

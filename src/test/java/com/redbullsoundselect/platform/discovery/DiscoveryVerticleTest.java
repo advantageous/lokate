@@ -1,6 +1,6 @@
-package com.redbullmediahouse.platform.discovery;
+package com.redbullsoundselect.platform.discovery;
 
-import com.redbullmediahouse.platform.IntegrationTests;
+import com.redbullsoundselect.platform.IntegrationTests;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.redbullmediahouse.platform.discovery.DiscoveryVerticle.SERVICE_ADDRESS;
+import static com.redbullsoundselect.platform.discovery.DiscoveryVerticle.SERVICE_ADDRESS;
 import static io.vertx.serviceproxy.ProxyHelper.createProxy;
 
 /**

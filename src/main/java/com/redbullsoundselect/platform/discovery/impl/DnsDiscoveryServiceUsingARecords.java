@@ -1,7 +1,7 @@
-package com.redbullmediahouse.platform.discovery.impl;
+package com.redbullsoundselect.platform.discovery.impl;
 
-import com.redbullmediahouse.platform.discovery.DiscoveryService;
-import com.redbullmediahouse.platform.discovery.ServiceDefinition;
+import com.redbullsoundselect.platform.discovery.DiscoveryService;
+import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;

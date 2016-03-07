@@ -1,4 +1,4 @@
-package com.redbullmediahouse.platform.discovery;
+package com.redbullsoundselect.platform.discovery;
 
 import io.vertx.codegen.annotations.DataObject;
 import io.vertx.core.json.JsonObject;

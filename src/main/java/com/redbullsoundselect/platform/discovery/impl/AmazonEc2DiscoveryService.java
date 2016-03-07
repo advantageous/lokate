@@ -1,12 +1,12 @@
-package com.redbullmediahouse.platform.discovery.impl;
+package com.redbullsoundselect.platform.discovery.impl;
 
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
-import com.redbullmediahouse.platform.discovery.DiscoveryService;
-import com.redbullmediahouse.platform.discovery.ServiceDefinition;
+import com.redbullsoundselect.platform.discovery.DiscoveryService;
+import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;

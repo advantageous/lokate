@@ -1,4 +1,4 @@
-package com.redbullmediahouse.platform.discovery.impl;
+package com.redbullsoundselect.platform.discovery.impl;
 
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
