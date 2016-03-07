@@ -1,5 +1,6 @@
 package com.redbullmediahouse.platform.discovery;
 
+import com.redbullmediahouse.platform.VertxPlatformUtils;
 import com.redbullmediahouse.platform.config.ConfigUtils;
 import com.redbullmediahouse.platform.config.ZooKeeperConfig;
 import com.redbullmediahouse.platform.discovery.impl.AmazonEc2DiscoveryService;
@@ -18,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -39,12 +42,16 @@ public class DiscoveryVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryVerticle.class);
 
     private final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders;
+    private final Consumer<Boolean> healthyConsumer;
 
-    public DiscoveryVerticle(final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders) {
+    public DiscoveryVerticle(final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders,
+                             final Consumer<Boolean> healthyConsumer) {
         this.discoveryServiceProviders = discoveryServiceProviders;
+        this.healthyConsumer = healthyConsumer;
     }
 
-    public DiscoveryVerticle(Vertx vertx) {
+    public DiscoveryVerticle(final Vertx vertx,
+                             final Consumer<Boolean> healthyConsumer) {
         this(new HashMap<String, Function<Config, DiscoveryService>>() {
             {
                 /* Docker. */
@@ -59,16 +66,17 @@ public class DiscoveryVerticle extends AbstractVerticle {
                 /* Amazon */
                 this.put("amazon-ec2", cfg -> new AmazonEc2DiscoveryService(vertx, cfg));
             }
-        });
+        }, healthyConsumer);
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final VertxOptions vertxOptions = readVertxOptions(CONFIG_NAMESPACE);
 
         if (vertxOptions.isClustered()) {
             final Config config = getConfig(CONFIG_NAMESPACE);
             final ZooKeeperConfig zooKeeperConfig = zookeeperConfig(config.getConfig("zookeeper"));
             final Properties zkProperties = zooKeeperConfig.toVerrxProperties();
+            final AtomicBoolean healthStatus = new AtomicBoolean();
             vertxOptions.setClusterManager(new ZookeeperClusterManager(zkProperties));
 
 
@@ -77,14 +85,19 @@ public class DiscoveryVerticle extends AbstractVerticle {
                 if (vertxAsyncResult.succeeded()) {
 
                     LOGGER.info("Clustering is working starting discovery verticle");
-                    vertxAsyncResult.result().deployVerticle(new DiscoveryVerticle(vertxAsyncResult.result()));
+                    vertxAsyncResult.result().deployVerticle(new DiscoveryVerticle(vertxAsyncResult.result(),
+                            healthStatus::set));
+                    VertxPlatformUtils.addAdminSupport(vertxAsyncResult.result(), "/health/", 9090,
+                            healthStatus::get);
                 } else {
                     LOGGER.error("Clustering is not working", vertxAsyncResult.cause());
                 }
             });
         } else {
+            final AtomicBoolean healthStatus = new AtomicBoolean();
+
             final Vertx vertx = Vertx.vertx(vertxOptions);
-            vertx.deployVerticle(new DiscoveryVerticle(vertx));
+            vertx.deployVerticle(new DiscoveryVerticle(vertx, healthStatus::set));
         }
 
     }
@@ -102,13 +115,14 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
             /* Get a service instance. */
             final DiscoveryService service =
-                    new DiscoveryServiceImpl(services.toArray(new DiscoveryService[services.size()]));
+                    new DiscoveryServiceImpl(healthyConsumer, services.toArray(new DiscoveryService[services.size()]));
 
             /* Register the proxy implementation. */
             ProxyHelper.registerService(DiscoveryService.class, vertx, service, SERVICE_ADDRESS);
 
             startFuture.complete();
         } catch (Exception e) {
+            healthyConsumer.accept(false);
             e.printStackTrace();
             startFuture.fail(e);
         }

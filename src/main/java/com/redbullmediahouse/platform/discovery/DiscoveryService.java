@@ -1,5 +1,6 @@
 package com.redbullmediahouse.platform.discovery;
 
+import com.redbullmediahouse.platform.health.HealthCheck;
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
@@ -13,7 +14,7 @@ import io.vertx.core.Handler;
  */
 @ProxyGen
 @VertxGen
-public interface DiscoveryService {
+public interface DiscoveryService extends HealthCheck {
 
     void lookupServiceByName(String name, Handler<AsyncResult<ServiceDefinition>> result);
 

@@ -21,6 +21,8 @@ public class DockerDiscoveryServiceTest {
 
     @BeforeClass
     public static void setup() {
+
+        System.out.println("DOCKER HOST IS SET TO " + System.getenv("DOCKER_HOST"));
         final Config dockerConfig =
                 ConfigUtils.getConfig("com.redbullmediahouse.platform.discovery").getConfig("provider-config.docker");
         discoveryService = new DockerDiscoveryService(

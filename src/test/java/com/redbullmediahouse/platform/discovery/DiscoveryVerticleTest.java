@@ -1,6 +1,8 @@
 package com.redbullmediahouse.platform.discovery;
 
 import com.redbullmediahouse.platform.IntegrationTests;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -11,6 +13,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.function.Consumer;
 
 import static com.redbullmediahouse.platform.discovery.DiscoveryVerticle.SERVICE_ADDRESS;
 import static io.vertx.serviceproxy.ProxyHelper.createProxy;
@@ -32,9 +36,10 @@ public class DiscoveryVerticleTest {
         vertx = rule.vertx();
 
         final Async async = context.async();
+        final Consumer<Boolean> healthCheck = status -> {};
 
-        vertx.deployVerticle(new DiscoveryVerticle(vertx), event -> {
-            context.assertTrue(event.succeeded());
+        final DiscoveryVerticle discoveryVerticle = new DiscoveryVerticle(vertx, healthCheck);
+        vertx.deployVerticle(discoveryVerticle, event -> {
             async.complete();
         });
     }
