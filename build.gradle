@@ -88,36 +88,21 @@ mesosEnvironments {
         instances 1
         cpus 1
         mem 256
-        healthCheck(
-                path: "/health/",
-                gracePeriodSeconds: 5,
-                intervalSeconds: 20,
-                maxConsecutiveFailures: 3
-        )
+        healthCheck()
     }
     preprod {
         url "http://mesos-master1.rbss.preprod.rbmhops.net:8080/v2/apps"
         instances 3
         cpus 1
         mem 256
-        healthCheck(
-                path: "/health/",
-                gracePeriodSeconds: 5,
-                intervalSeconds: 20,
-                maxConsecutiveFailures: 3
-        )
+        healthCheck()
     }
     production {
         url "http://mesos-master1.rbss.prod.rbmhops.net:8080/v2/apps"
         instances 3
         cpus 1
         mem 256
-        healthCheck(
-                path: "/health/",
-                gracePeriodSeconds: 5,
-                intervalSeconds: 20,
-                maxConsecutiveFailures: 3
-        )
+        healthCheck()
     }
 }
 
