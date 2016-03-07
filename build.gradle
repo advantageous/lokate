@@ -1,12 +1,11 @@
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral()
-        jcenter()
+        maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/plugins-release/' }
     }
     dependencies {
         classpath 'se.transmode.gradle:gradle-docker:1.2'
-        classpath 'com.rbmh.rbss:rbss-platform-deploy-gradle-plugin:1.0.0'
+        classpath 'com.rbmh.rbss:rbss-platform-deploy-gradle-plugin:1.0.6'
     }
 }
 
@@ -75,6 +74,59 @@ test {
     }
 }
 
+testDockerContainers {
+    httpd {
+        publishAll true
+        containerName "httpd"
+        image "httpd"
+    }
+}
+
+mesosEnvironments {
+    staging {
+        url "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps"
+        instances 1
+        cpus 1
+        mem 256
+        healthCheck(
+                protocol: "HTTP",
+                portIndex: 0,
+                path: "/",
+                gracePeriodSeconds: 5,
+                intervalSeconds: 20,
+                maxConsecutiveFailures: 3
+        )
+    }
+    preprod {
+        url "http://mesos-master1.rbss.preprod.rbmhops.net:8080/v2/apps"
+        instances 3
+        cpus 1
+        mem 256
+        healthCheck(
+                protocol: "HTTP",
+                portIndex: 0,
+                path: "/",
+                gracePeriodSeconds: 5,
+                intervalSeconds: 20,
+                maxConsecutiveFailures: 3
+        )
+    }
+    production {
+        url "http://mesos-master1.rbss.prod.rbmhops.net:8080/v2/apps"
+        instances 3
+        cpus 1
+        mem 256
+        healthCheck(
+                protocol: "HTTP",
+                portIndex: 0,
+                path: "/",
+                gracePeriodSeconds: 5,
+                intervalSeconds: 20,
+                maxConsecutiveFailures: 3
+        )
+    }
+}
+
 compileJava.source += project.sourceSets.generated.java
 
 task itest(type: Test) {
@@ -84,14 +136,6 @@ task itest(type: Test) {
 }
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
-
-dockerContainers {
-    httpd {
-        publishAll true
-        containerName "httpd"
-        image "httpd"
-    }
-}
 
 artifacts {
     archives sourcesJar
