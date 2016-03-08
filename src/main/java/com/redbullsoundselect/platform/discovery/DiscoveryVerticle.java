@@ -2,7 +2,6 @@ package com.redbullsoundselect.platform.discovery;
 
 import com.redbullmediahouse.platform.config.ConfigUtils;
 import com.redbullmediahouse.platform.config.ZooKeeperConfig;
-import com.redbullsoundselect.platform.VertxPlatformUtils;
 import com.redbullsoundselect.platform.discovery.impl.AmazonEc2DiscoveryService;
 import com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryServiceUsingARecords;
 import com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryService;
@@ -12,18 +11,21 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.ext.dropwizard.MetricsService;
+import io.vertx.ext.web.Router;
 import io.vertx.serviceproxy.ProxyHelper;
 import io.vertx.spi.cluster.impl.zookeeper.ZookeeperClusterManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,16 +45,12 @@ public class DiscoveryVerticle extends AbstractVerticle {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiscoveryVerticle.class);
 
     private final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders;
-    private final Consumer<Boolean> healthyConsumer;
 
-    public DiscoveryVerticle(final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders,
-                             final Consumer<Boolean> healthyConsumer) {
+    public DiscoveryVerticle(final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders) {
         this.discoveryServiceProviders = discoveryServiceProviders;
-        this.healthyConsumer = healthyConsumer;
     }
 
-    public DiscoveryVerticle(final Vertx vertx,
-                             final Consumer<Boolean> healthyConsumer) {
+    public DiscoveryVerticle(final Vertx vertx) {
         this(new HashMap<String, Function<Config, DiscoveryService>>() {
             {
                 /* Docker. */
@@ -67,7 +65,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
                 /* Amazon */
                 this.put("amazon-ec2", cfg -> new AmazonEc2DiscoveryService(vertx, cfg));
             }
-        }, healthyConsumer);
+        });
     }
 
     public static void main(final String[] args) {
@@ -77,7 +75,6 @@ public class DiscoveryVerticle extends AbstractVerticle {
             final Config config = getConfig(CONFIG_NAMESPACE);
             final ZooKeeperConfig zooKeeperConfig = zookeeperConfig(config.getConfig("zookeeper"));
             final Properties zkProperties = zooKeeperConfig.toVerrxProperties();
-            final AtomicBoolean healthStatus = new AtomicBoolean();
             vertxOptions.setClusterManager(new ZookeeperClusterManager(zkProperties));
 
 
@@ -86,21 +83,91 @@ public class DiscoveryVerticle extends AbstractVerticle {
                 if (vertxAsyncResult.succeeded()) {
 
                     LOGGER.info("Clustering is working starting discovery verticle");
-                    vertxAsyncResult.result().deployVerticle(new DiscoveryVerticle(vertxAsyncResult.result(),
-                            healthStatus::set));
-                    VertxPlatformUtils.addAdminSupport(vertxAsyncResult.result(), "/health/", 9090,
-                            healthStatus::get);
+                    vertxAsyncResult.result().deployVerticle(new DiscoveryVerticle(vertxAsyncResult.result()));
+                    addAdminSupport(vertxAsyncResult.result(), "/health/", 9090);
                 } else {
                     LOGGER.error("Clustering is not working", vertxAsyncResult.cause());
                 }
             });
         } else {
-            final AtomicBoolean healthStatus = new AtomicBoolean();
 
             final Vertx vertx = Vertx.vertx(vertxOptions);
-            vertx.deployVerticle(new DiscoveryVerticle(vertx, healthStatus::set));
+            vertx.deployVerticle(new DiscoveryVerticle(vertx));
         }
 
+    }
+
+    /**
+     * Set up the admin support.
+     * Defined here so it can be tested independenty of AbstractVerticle, and also so AbstractVerticle
+     * does not become a God class.
+     *
+     * @param vertx     vertx
+     * @param healthURI healthURI
+     * @param port      port
+     */
+    public static void addAdminSupport(final Vertx vertx,
+                                       final String healthURI,
+                                       final int port) {
+        final Router router = Router.router(vertx);
+        setupMetrics(vertx, router);
+        setupHealth(vertx, healthURI, router);
+        setupAdminEndpoint(vertx, healthURI, port, router);
+    }
+
+
+    private static void setupHealth(Vertx vertx, String healthURI, Router router) {
+        router.route(healthURI).handler(context -> {
+
+            DiscoveryService discoveryService = ProxyHelper.createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
+
+            discoveryService.checkHealth(result -> {
+
+                if (result.succeeded() && result.result()) {
+                    context.response().setStatusCode(200).end("\"ok\"");
+                } else {
+                    context.response().setStatusCode(500).end("\"bad health\"");
+                }
+            });
+
+        });
+    }
+
+    private static void setupMetrics(Vertx vertx, Router router) {
+        /*
+        * Setup metrics if enabled.
+        */
+        if (vertx.isMetricsEnabled()) {
+            MetricsService metricsService = MetricsService.create(vertx);
+            router.route("/metrics/")
+                    .handler(context -> {
+                        LOGGER.debug("In metrics handler: " + metricsService);
+                        String metrics = metricsService.getMetricsSnapshot(vertx).encodePrettily();
+                        LOGGER.debug(metrics);
+                        context.response().setStatusCode(HttpURLConnection.HTTP_OK).end(metrics);
+                    });
+            router.route("/metrics/eventbus/")
+                    .handler(context -> {
+                        String metrics = metricsService.getMetricsSnapshot(vertx.eventBus()).encodePrettily();
+                        context.response().setStatusCode(HttpURLConnection.HTTP_OK).end(metrics);
+                    });
+        } else {
+            LOGGER.warn("Metrics are not enabled");
+        }
+    }
+
+    private static void setupAdminEndpoint(Vertx vertx, String healthURI, int port, Router router) {
+        final HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions().setPort(port));
+
+        httpServer.requestHandler(router::accept);
+
+        httpServer.listen(event -> {
+            if (event.failed()) {
+                LOGGER.error("Unable to startup health endpoint {} {}", port, healthURI);
+            } else {
+                LOGGER.info("Health endpoint running {} {}", port, healthURI);
+            }
+        });
     }
 
     @Override
@@ -116,14 +183,13 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
             /* Get a service instance. */
             final DiscoveryService service =
-                    new DiscoveryServiceImpl(healthyConsumer, services.toArray(new DiscoveryService[services.size()]));
+                    new DiscoveryServiceImpl(services.toArray(new DiscoveryService[services.size()]));
 
             /* Register the proxy implementation. */
             ProxyHelper.registerService(DiscoveryService.class, vertx, service, SERVICE_ADDRESS);
 
             startFuture.complete();
         } catch (Exception e) {
-            healthyConsumer.accept(false);
             e.printStackTrace();
             startFuture.fail(e);
         }

@@ -1,6 +1,7 @@
 package com.redbullsoundselect.platform.discovery;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 /**
  * Created by gcc on 2/5/16.
@@ -21,19 +21,13 @@ public class DiscoveryServiceImpl implements DiscoveryService {
     private final List<DiscoveryService> discoveryServices;
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private final Consumer<Boolean> healthStatusConsumer;
 
-    public DiscoveryServiceImpl(final Consumer<Boolean> healthStatusConsumer,
-                                final DiscoveryService... discoveryServices) {
-        this.discoveryServices = Arrays.asList(discoveryServices);
-        this.healthStatusConsumer = healthStatusConsumer;
-    }
+    private boolean healthy;
 
     public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
         this.discoveryServices = Arrays.asList(discoveryServices);
-        this.healthStatusConsumer = aBoolean -> {
-        };
     }
+
 
     private Optional<DiscoveryService> getNextProvider(final Iterator<DiscoveryService> iterator) {
         return !iterator.hasNext() ? Optional.empty() : Optional.of(iterator.next());
@@ -50,7 +44,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                     () -> queryProviderByName(name, iterator, result));
         } catch (Exception ex) {
             logger.error("Unable to query", ex);
-            healthStatusConsumer.accept(false);
+            healthy = false;
         }
     }
 
@@ -67,7 +61,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                     () -> queryProviderByNameAndContainerPort(name, containerPort, iterator, result));
         } catch (Exception ex) {
             logger.error("Unable to query", ex);
-            healthStatusConsumer.accept(false);
+            healthy = false;
         }
     }
 
@@ -80,14 +74,14 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         getNextProvider(iterator).ifPresent(discoveryProvider ->
                 lookupCall.lookup(discoveryProvider, asyncResult -> {
                     if (asyncResult.succeeded()) {
-                        healthStatusConsumer.accept(true);
+                        healthy = true;
                         result.handle(asyncResult);
                     } else {
                         if (!iterator.hasNext()) {
                             logger.error("Unable to find service {} from any provider ", name);
                             logger.error("Unable to find service from any provider", asyncResult.cause());
                             result.handle(asyncResult);
-                            healthStatusConsumer.accept(false);
+                            healthy = false;
                         }
                         logger.info("Unable to find service {} from provider {}",
                                 name, discoveryProvider.getClass().getSimpleName());
@@ -96,6 +90,12 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                     }
                 })
         );
+    }
+
+    @Override
+    public void checkHealth(Handler<AsyncResult<Boolean>> healthCheckResultHandler) {
+
+        healthCheckResultHandler.handle(Future.succeededFuture(healthy));
     }
 
     @Override

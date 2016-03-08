@@ -12,8 +12,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.function.Consumer;
-
 import static com.redbullsoundselect.platform.discovery.DiscoveryVerticle.SERVICE_ADDRESS;
 import static io.vertx.serviceproxy.ProxyHelper.createProxy;
 
@@ -34,10 +32,8 @@ public class DiscoveryVerticleTest {
         vertx = rule.vertx();
 
         final Async async = context.async();
-        final Consumer<Boolean> healthCheck = status -> {
-        };
 
-        final DiscoveryVerticle discoveryVerticle = new DiscoveryVerticle(vertx, healthCheck);
+        final DiscoveryVerticle discoveryVerticle = new DiscoveryVerticle(vertx);
         vertx.deployVerticle(discoveryVerticle, event -> {
             async.complete();
         });
