@@ -22,7 +22,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private boolean healthy;
+    private boolean healthy = true;
 
     public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
         this.discoveryServices = Arrays.asList(discoveryServices);
@@ -93,7 +93,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
     }
 
     @Override
-    public void checkHealth(Handler<AsyncResult<Boolean>> healthCheckResultHandler) {
+    public void checkHealth(final Handler<AsyncResult<Boolean>> healthCheckResultHandler) {
 
         healthCheckResultHandler.handle(Future.succeededFuture(healthy));
     }
