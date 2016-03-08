@@ -7,12 +7,20 @@ import com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryServiceUsingAR
 import com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryService;
 import com.redbullsoundselect.platform.discovery.impl.MarathonDiscoveryService;
 import com.typesafe.config.Config;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpServer;
+import io.vertx.core.http.HttpServerOptions;
+import io.vertx.ext.dropwizard.MetricsService;
+import io.vertx.ext.web.Router;
 import io.vertx.serviceproxy.ProxyHelper;
 import io.vertx.spi.cluster.impl.zookeeper.ZookeeperClusterManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -23,8 +31,6 @@ import java.util.stream.Collectors;
 
 import static com.redbullmediahouse.platform.config.ConfigUtils.getConfig;
 import static com.redbullmediahouse.platform.config.VertxFromConfig.readVertxOptions;
-
-
 import static com.redbullmediahouse.platform.config.ZooKeeperConfig.zookeeperConfig;
 
 /**
@@ -44,7 +50,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
         this.discoveryServiceProviders = discoveryServiceProviders;
     }
 
-    public DiscoveryVerticle(Vertx vertx) {
+    public DiscoveryVerticle(final Vertx vertx) {
         this(new HashMap<String, Function<Config, DiscoveryService>>() {
             {
                 /* Docker. */
@@ -62,7 +68,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
         });
     }
 
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         final VertxOptions vertxOptions = readVertxOptions(CONFIG_NAMESPACE);
 
         if (vertxOptions.isClustered()) {
@@ -78,15 +84,90 @@ public class DiscoveryVerticle extends AbstractVerticle {
 
                     LOGGER.info("Clustering is working starting discovery verticle");
                     vertxAsyncResult.result().deployVerticle(new DiscoveryVerticle(vertxAsyncResult.result()));
+                    addAdminSupport(vertxAsyncResult.result(), "/health/", 9090);
                 } else {
                     LOGGER.error("Clustering is not working", vertxAsyncResult.cause());
                 }
             });
         } else {
+
             final Vertx vertx = Vertx.vertx(vertxOptions);
             vertx.deployVerticle(new DiscoveryVerticle(vertx));
         }
 
+    }
+
+    /**
+     * Set up the admin support.
+     * Defined here so it can be tested independenty of AbstractVerticle, and also so AbstractVerticle
+     * does not become a God class.
+     *
+     * @param vertx     vertx
+     * @param healthURI healthURI
+     * @param port      port
+     */
+    public static void addAdminSupport(final Vertx vertx,
+                                       final String healthURI,
+                                       final int port) {
+        final Router router = Router.router(vertx);
+        setupMetrics(vertx, router);
+        setupHealth(vertx, healthURI, router);
+        setupAdminEndpoint(vertx, healthURI, port, router);
+    }
+
+
+    private static void setupHealth(Vertx vertx, String healthURI, Router router) {
+        router.route(healthURI).handler(context -> {
+
+            DiscoveryService discoveryService = ProxyHelper.createProxy(DiscoveryService.class, vertx, SERVICE_ADDRESS);
+
+            discoveryService.checkHealth(result -> {
+
+                if (result.succeeded() && result.result()) {
+                    context.response().setStatusCode(200).end("\"ok\"");
+                } else {
+                    context.response().setStatusCode(500).end("\"bad health\"");
+                }
+            });
+
+        });
+    }
+
+    private static void setupMetrics(Vertx vertx, Router router) {
+        /*
+        * Setup metrics if enabled.
+        */
+        if (vertx.isMetricsEnabled()) {
+            MetricsService metricsService = MetricsService.create(vertx);
+            router.route("/metrics/")
+                    .handler(context -> {
+                        LOGGER.debug("In metrics handler: " + metricsService);
+                        String metrics = metricsService.getMetricsSnapshot(vertx).encodePrettily();
+                        LOGGER.debug(metrics);
+                        context.response().setStatusCode(HttpURLConnection.HTTP_OK).end(metrics);
+                    });
+            router.route("/metrics/eventbus/")
+                    .handler(context -> {
+                        String metrics = metricsService.getMetricsSnapshot(vertx.eventBus()).encodePrettily();
+                        context.response().setStatusCode(HttpURLConnection.HTTP_OK).end(metrics);
+                    });
+        } else {
+            LOGGER.warn("Metrics are not enabled");
+        }
+    }
+
+    private static void setupAdminEndpoint(Vertx vertx, String healthURI, int port, Router router) {
+        final HttpServer httpServer = vertx.createHttpServer(new HttpServerOptions().setPort(port));
+
+        httpServer.requestHandler(router::accept);
+
+        httpServer.listen(event -> {
+            if (event.failed()) {
+                LOGGER.error("Unable to startup health endpoint {} {}", port, healthURI);
+            } else {
+                LOGGER.info("Health endpoint running {} {}", port, healthURI);
+            }
+        });
     }
 
     @Override

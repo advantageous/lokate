@@ -33,8 +33,8 @@ public class DiscoveryVerticleTest {
 
         final Async async = context.async();
 
-        vertx.deployVerticle(new DiscoveryVerticle(vertx), event -> {
-            context.assertTrue(event.succeeded());
+        final DiscoveryVerticle discoveryVerticle = new DiscoveryVerticle(vertx);
+        vertx.deployVerticle(discoveryVerticle, event -> {
             async.complete();
         });
     }

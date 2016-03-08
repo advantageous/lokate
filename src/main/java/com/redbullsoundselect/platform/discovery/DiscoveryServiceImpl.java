@@ -1,6 +1,7 @@
 package com.redbullsoundselect.platform.discovery;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +22,12 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public DiscoveryServiceImpl(DiscoveryService... discoveryServices) {
+    private boolean healthy;
+
+    public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
         this.discoveryServices = Arrays.asList(discoveryServices);
     }
+
 
     private Optional<DiscoveryService> getNextProvider(final Iterator<DiscoveryService> iterator) {
         return !iterator.hasNext() ? Optional.empty() : Optional.of(iterator.next());
@@ -33,10 +37,15 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                                      final Iterator<DiscoveryService> iterator,
                                      final Handler<AsyncResult<ServiceDefinition>> result) {
 
-        queryDiscoveryProviders(name, iterator, result,
-                (discoveryService, handler) ->
-                        discoveryService.lookupServiceByName(name, handler),
-                () -> queryProviderByName(name, iterator, result));
+        try {
+            queryDiscoveryProviders(name, iterator, result,
+                    (discoveryService, handler) ->
+                            discoveryService.lookupServiceByName(name, handler),
+                    () -> queryProviderByName(name, iterator, result));
+        } catch (Exception ex) {
+            logger.error("Unable to query", ex);
+            healthy = false;
+        }
     }
 
     private void queryProviderByNameAndContainerPort(final String name,
@@ -44,10 +53,16 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                                                      final Iterator<DiscoveryService> iterator,
                                                      final Handler<AsyncResult<ServiceDefinition>> result) {
 
-        queryDiscoveryProviders(name, iterator, result,
-                (discoveryService, handler) ->
-                        discoveryService.lookupServiceByNameAndContainerPort(name, containerPort, handler),
-                () -> queryProviderByNameAndContainerPort(name, containerPort, iterator, result));
+
+        try {
+            queryDiscoveryProviders(name, iterator, result,
+                    (discoveryService, handler) ->
+                            discoveryService.lookupServiceByNameAndContainerPort(name, containerPort, handler),
+                    () -> queryProviderByNameAndContainerPort(name, containerPort, iterator, result));
+        } catch (Exception ex) {
+            logger.error("Unable to query", ex);
+            healthy = false;
+        }
     }
 
     private void queryDiscoveryProviders(final String name,
@@ -59,12 +74,14 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         getNextProvider(iterator).ifPresent(discoveryProvider ->
                 lookupCall.lookup(discoveryProvider, asyncResult -> {
                     if (asyncResult.succeeded()) {
+                        healthy = true;
                         result.handle(asyncResult);
                     } else {
                         if (!iterator.hasNext()) {
                             logger.error("Unable to find service {} from any provider ", name);
                             logger.error("Unable to find service from any provider", asyncResult.cause());
                             result.handle(asyncResult);
+                            healthy = false;
                         }
                         logger.info("Unable to find service {} from provider {}",
                                 name, discoveryProvider.getClass().getSimpleName());
@@ -73,6 +90,12 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                     }
                 })
         );
+    }
+
+    @Override
+    public void checkHealth(Handler<AsyncResult<Boolean>> healthCheckResultHandler) {
+
+        healthCheckResultHandler.handle(Future.succeededFuture(healthy));
     }
 
     @Override
