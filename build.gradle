@@ -25,7 +25,7 @@ ext {
 }
 
 group 'com.redbullsoundselect.platform'
-version '0.4.0'
+version '0.5.0'
 //version '0.3.' + new Date().format('yyyyMMddHHmmss')
 
 sourceSets {
@@ -65,7 +65,7 @@ dependencies {
     compile 'org.apache.curator:curator-client:2.10.0'
     compile 'org.apache.curator:curator-framework:2.10.0'
     compile 'org.apache.curator:curator-recipes:2.10.0'
-    compile 'com.redbullmediahouse.platform:rbss-base-vertx:0.1.0'
+    compile 'com.redbullsoundselect.platform:rbss-base-vertx:0.2.0'
     testCompile "io.vertx:vertx-unit:$vertxVersion"
     testCompile group: 'junit', name: 'junit', version: '4.11'
 }

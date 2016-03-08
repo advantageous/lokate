@@ -28,9 +28,11 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         this.discoveryServices = Arrays.asList(discoveryServices);
         this.healthStatusConsumer = healthStatusConsumer;
     }
+
     public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
         this.discoveryServices = Arrays.asList(discoveryServices);
-        this.healthStatusConsumer = aBoolean -> {};
+        this.healthStatusConsumer = aBoolean -> {
+        };
     }
 
     private Optional<DiscoveryService> getNextProvider(final Iterator<DiscoveryService> iterator) {

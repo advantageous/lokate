@@ -1,6 +1,6 @@
 package com.redbullsoundselect.platform.discovery;
 
-import com.redbullmediahouse.platform.health.HealthCheck;
+import com.redbullsoundselect.platform.health.HealthCheck;
 import io.vertx.codegen.annotations.ProxyClose;
 import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;

@@ -1,12 +1,6 @@
 package com.redbullsoundselect.platform.discovery;
 
-<<<<<<< HEAD:src/test/java/com/redbullmediahouse/platform/discovery/DiscoveryVerticleTest.java
-import com.redbullmediahouse.platform.IntegrationTests;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
-=======
 import com.redbullsoundselect.platform.IntegrationTests;
->>>>>>> master:src/test/java/com/redbullsoundselect/platform/discovery/DiscoveryVerticleTest.java
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -18,13 +12,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-<<<<<<< HEAD:src/test/java/com/redbullmediahouse/platform/discovery/DiscoveryVerticleTest.java
 import java.util.function.Consumer;
 
-import static com.redbullmediahouse.platform.discovery.DiscoveryVerticle.SERVICE_ADDRESS;
-=======
 import static com.redbullsoundselect.platform.discovery.DiscoveryVerticle.SERVICE_ADDRESS;
->>>>>>> master:src/test/java/com/redbullsoundselect/platform/discovery/DiscoveryVerticleTest.java
 import static io.vertx.serviceproxy.ProxyHelper.createProxy;
 
 /**
@@ -44,7 +34,8 @@ public class DiscoveryVerticleTest {
         vertx = rule.vertx();
 
         final Async async = context.async();
-        final Consumer<Boolean> healthCheck = status -> {};
+        final Consumer<Boolean> healthCheck = status -> {
+        };
 
         final DiscoveryVerticle discoveryVerticle = new DiscoveryVerticle(vertx, healthCheck);
         vertx.deployVerticle(discoveryVerticle, event -> {

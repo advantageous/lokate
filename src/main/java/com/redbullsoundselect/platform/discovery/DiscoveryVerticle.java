@@ -1,14 +1,17 @@
 package com.redbullsoundselect.platform.discovery;
 
-import com.redbullmediahouse.platform.VertxPlatformUtils;
 import com.redbullmediahouse.platform.config.ConfigUtils;
 import com.redbullmediahouse.platform.config.ZooKeeperConfig;
+import com.redbullsoundselect.platform.VertxPlatformUtils;
 import com.redbullsoundselect.platform.discovery.impl.AmazonEc2DiscoveryService;
 import com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryServiceUsingARecords;
 import com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryService;
 import com.redbullsoundselect.platform.discovery.impl.MarathonDiscoveryService;
 import com.typesafe.config.Config;
-import io.vertx.core.*;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.core.VertxOptions;
 import io.vertx.serviceproxy.ProxyHelper;
 import io.vertx.spi.cluster.impl.zookeeper.ZookeeperClusterManager;
 import org.slf4j.Logger;
@@ -26,8 +29,6 @@ import java.util.stream.Collectors;
 
 import static com.redbullmediahouse.platform.config.ConfigUtils.getConfig;
 import static com.redbullmediahouse.platform.config.VertxFromConfig.readVertxOptions;
-
-
 import static com.redbullmediahouse.platform.config.ZooKeeperConfig.zookeeperConfig;
 
 /**
