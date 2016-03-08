@@ -1,4 +1,4 @@
-package com.redbullmediahouse.platform.discovery;
+package com.redbullsoundselect.platform.discovery;
 
 import com.redbullmediahouse.platform.health.HealthCheck;
 import io.vertx.codegen.annotations.ProxyClose;

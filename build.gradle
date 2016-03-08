@@ -1,12 +1,11 @@
 buildscript {
     repositories {
         mavenLocal()
-        mavenCentral()
-        jcenter()
+        maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/plugins-release/' }
     }
     dependencies {
         classpath 'se.transmode.gradle:gradle-docker:1.2'
-        classpath 'com.rbmh.rbss:rbss-platform-deploy-gradle-plugin:1.0.0'
+        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.1.0'
     }
 }
 
@@ -18,15 +17,16 @@ plugins {
     id "maven"
 }
 
-apply plugin: 'com.rbmh.rbss.rbss-platform-deploy-gradle-plugin'
+apply plugin: 'rbss-devops'
 
 ext {
     vertxVersion = '3.2.1'
     jsOutDir = "${projectDir}/build/generated"
 }
 
-group 'com.redbullmediahouse.platform'
-version '0.2.' + new Date().format('yyyyMMddHHmmss')
+group 'com.redbullsoundselect.platform'
+version '0.4.0'
+//version '0.3.' + new Date().format('yyyyMMddHHmmss')
 
 sourceSets {
     generated {
@@ -46,7 +46,7 @@ repositories {
 }
 
 sourceCompatibility = '1.8'
-mainClassName = 'com.redbullmediahouse.platform.discovery.DiscoveryVerticle'
+mainClassName = 'com.redbullsoundselect.platform.discovery.DiscoveryVerticle'
 
 dependencies {
     compile "ch.qos.logback:logback-core:1.1.3"
@@ -72,7 +72,39 @@ dependencies {
 
 test {
     useJUnit {
-        includeCategories 'com.redbullmediahouse.platform.UnitTests'
+        includeCategories 'com.redbullsoundselect.platform.UnitTests'
+    }
+}
+
+testDockerContainers {
+    httpd {
+        publishAll true
+        containerName "httpd"
+        image "httpd"
+    }
+}
+
+mesosEnvironments {
+    staging {
+        url "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps"
+        instances 1
+        cpus 1
+        mem 256
+        healthCheck()
+    }
+    preprod {
+        url "http://mesos-master1.rbss.preprod.rbmhops.net:8080/v2/apps"
+        instances 3
+        cpus 1
+        mem 256
+        healthCheck()
+    }
+    production {
+        url "http://mesos-master1.rbss.prod.rbmhops.net:8080/v2/apps"
+        instances 3
+        cpus 1
+        mem 256
+        healthCheck()
     }
 }
 
@@ -80,19 +112,11 @@ compileJava.source += project.sourceSets.generated.java
 
 task itest(type: Test) {
     useJUnit {
-        includeCategories 'com.redbullmediahouse.platform.IntegrationTests'
+        includeCategories 'com.redbullsoundselect.platform.IntegrationTests'
     }
 }
 itest.finalizedBy stopTestDocker
 itest.dependsOn startTestDocker
-
-dockerContainers {
-    httpd {
-        publishAll true
-        containerName "httpd"
-        image "httpd"
-    }
-}
 
 artifacts {
     archives sourcesJar

@@ -1,12 +1,12 @@
-package com.redbullmediahouse.platform.discovery;
+package com.redbullsoundselect.platform.discovery;
 
 import com.redbullmediahouse.platform.VertxPlatformUtils;
 import com.redbullmediahouse.platform.config.ConfigUtils;
 import com.redbullmediahouse.platform.config.ZooKeeperConfig;
-import com.redbullmediahouse.platform.discovery.impl.AmazonEc2DiscoveryService;
-import com.redbullmediahouse.platform.discovery.impl.DnsDiscoveryServiceUsingARecords;
-import com.redbullmediahouse.platform.discovery.impl.DockerDiscoveryService;
-import com.redbullmediahouse.platform.discovery.impl.MarathonDiscoveryService;
+import com.redbullsoundselect.platform.discovery.impl.AmazonEc2DiscoveryService;
+import com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryServiceUsingARecords;
+import com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryService;
+import com.redbullsoundselect.platform.discovery.impl.MarathonDiscoveryService;
 import com.typesafe.config.Config;
 import io.vertx.core.*;
 import io.vertx.serviceproxy.ProxyHelper;

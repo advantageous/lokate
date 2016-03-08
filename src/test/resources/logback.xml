@@ -12,6 +12,6 @@
         <appender-ref ref="STDOUT"/>
     </root>
 
-    <logger name="com.redbullmediahouse" level="DEBUG"/>
+    <logger name="com.redbullsoundselect" level="DEBUG"/>
 
 </configuration>
