@@ -49,6 +49,8 @@ public class DockerDiscoveryService implements DiscoveryService {
     public void lookupServiceByName(final String name,
                                     final Handler<AsyncResult<ServiceDefinition>> result) {
 
+
+        logger.debug("Docker lookupServiceByName  {}", name);
         this.queryDocker(result,
                 json -> Optional.of(json)
                         .map(o -> o.getString("Image"))
@@ -71,6 +73,9 @@ public class DockerDiscoveryService implements DiscoveryService {
     public void lookupServiceByNameAndContainerPort(final String name,
                                                     final int containerPort,
                                                     final Handler<AsyncResult<ServiceDefinition>> result) {
+
+
+        logger.debug("Docker lookupServiceByNameAndContainerPort  {} {}" ,name, containerPort);
         this.queryDocker(result,
                 json -> Optional.of(json)
                         .map(o -> o.getString("Image"))
@@ -85,10 +90,15 @@ public class DockerDiscoveryService implements DiscoveryService {
                     for (int i = 0; i < ports.size(); i++) {
                         final JsonObject port = ports.getJsonObject(i);
                         final int foundContainerPort = port.getInteger("PrivatePort");
+
                         if (containerPort == foundContainerPort) {
+
+                            logger.debug("Docker FOUND {} {} {}", name, containerPort, port.getInteger("PublicPort"));
                             return new ServiceDefinition(dockerHost, port.getInteger("PublicPort"));
                         }
                     }
+
+                    logger.error("Docker NOT FOUND {} {}", name, containerPort);
                     throw new IllegalStateException("Private port (container port) not found: " + containerPort);
                 });
     }
@@ -122,7 +132,8 @@ public class DockerDiscoveryService implements DiscoveryService {
             if (httpClientResponse.statusCode() >= 200 && httpClientResponse.statusCode() < 300) {
                 httpClientResponse.bodyHandler(buffer -> {
                     final JsonArray jsonArray = buffer.toJsonArray();
-                    handleResponseBodyFromDocker(result, filter, transformResultToServiceDefinition, jsonArray);
+                    handleResponseBodyFromDocker(result, filter,
+                            transformResultToServiceDefinition, jsonArray);
                 });
             } else {
                 result.handle(Future.failedFuture(String.format("Unable to find %d %s", httpClientResponse.statusCode(),
@@ -135,7 +146,10 @@ public class DockerDiscoveryService implements DiscoveryService {
 
     }
 
-    private void handleResponseBodyFromDocker(Handler<AsyncResult<ServiceDefinition>> result, Predicate<JsonObject> filter, Function<Object, ServiceDefinition> transformResultToServiceDefinition, JsonArray jsonArray) {
+    private void handleResponseBodyFromDocker(final Handler<AsyncResult<ServiceDefinition>> result,
+                                              final Predicate<JsonObject> filter,
+                                              final Function<Object, ServiceDefinition> transformResultToServiceDefinition,
+                                              final JsonArray jsonArray) {
         final Optional<ServiceDefinition> serviceDefinition = jsonArray
                 .stream()
                 .filter(o -> o instanceof JsonObject)
