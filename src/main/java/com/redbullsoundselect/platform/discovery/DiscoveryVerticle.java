@@ -47,6 +47,7 @@ public class DiscoveryVerticle extends AbstractVerticle {
     private final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders;
 
     public DiscoveryVerticle(final Map<String, Function<Config, DiscoveryService>> discoveryServiceProviders) {
+
         this.discoveryServiceProviders = discoveryServiceProviders;
     }
 

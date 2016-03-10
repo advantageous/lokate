@@ -26,6 +26,11 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
     public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
         this.discoveryServices = Arrays.asList(discoveryServices);
+        if (logger.isDebugEnabled()) {
+            this.discoveryServices.forEach(discoveryService -> {
+                logger.debug("Using Discovery Service {}", discoveryService.getClass().getName());
+            });
+        }
     }
 
 
@@ -36,6 +41,10 @@ public class DiscoveryServiceImpl implements DiscoveryService {
     private void queryProviderByName(final String name,
                                      final Iterator<DiscoveryService> iterator,
                                      final Handler<AsyncResult<ServiceDefinition>> result) {
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("queryProviderByName name {} ", name);
+        }
 
         try {
             queryDiscoveryProviders(name, iterator, result,
@@ -52,6 +61,10 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                                                      final int containerPort,
                                                      final Iterator<DiscoveryService> iterator,
                                                      final Handler<AsyncResult<ServiceDefinition>> result) {
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("queryProviderByNameAndContainerPort name {}, port {} ", name, containerPort);
+        }
 
 
         try {
