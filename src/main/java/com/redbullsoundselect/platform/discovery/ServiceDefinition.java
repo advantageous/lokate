@@ -1,11 +1,6 @@
 package com.redbullsoundselect.platform.discovery;
 
-import io.vertx.codegen.annotations.DataObject;
-import io.vertx.core.json.JsonObject;
 
-import java.util.TreeMap;
-
-@DataObject
 public class ServiceDefinition {
 
     private final String address;
@@ -20,27 +15,12 @@ public class ServiceDefinition {
         this.port = -1;
     }
 
-    public ServiceDefinition(final ServiceDefinition serviceDefinition) {
-        this(serviceDefinition.getAddress(), serviceDefinition.getPort());
-    }
-
-    public ServiceDefinition(final JsonObject jsonObject) {
-        this(jsonObject.getString("address"), jsonObject.getInteger("port"));
-    }
 
     public ServiceDefinition(final String address, final Integer port) {
         this.address = address;
         this.port = port != null ? port : -1;
     }
 
-    public JsonObject toJson() {
-        return new JsonObject(new TreeMap<String, Object>() {
-            {
-                put("address", address);
-                put("port", port);
-            }
-        });
-    }
 
     public String getAddress() {
         return address;

@@ -3,7 +3,6 @@ package com.redbullsoundselect.platform.discovery.impl;
 import com.redbullmediahouse.platform.config.ConfigUtils;
 import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,18 +34,17 @@ public class DockerDiscoveryServiceTest {
     @Test
     public void testLookupByName() throws Exception {
 
-        AtomicReference<AsyncResult<ServiceDefinition>> resultAtomicReference = new AtomicReference<>();
+        AtomicReference<ServiceDefinition> resultAtomicReference = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
-        discoveryService.lookupServiceByName("httpd", serviceDefinitionAsyncResult -> {
+        discoveryService.lookupServiceByName(serviceDefinitionAsyncResult -> {
             resultAtomicReference.set(serviceDefinitionAsyncResult);
             latch.countDown();
-        });
+        }, "httpd");
 
         latch.await(5, TimeUnit.SECONDS);
 
         assertNotNull(resultAtomicReference.get());
-        assertTrue(resultAtomicReference.get().succeeded());
-        ServiceDefinition serviceDefinition = resultAtomicReference.get().result();
+        ServiceDefinition serviceDefinition = resultAtomicReference.get();
 
         assertFalse(serviceDefinition.getAddress().isEmpty());
     }
@@ -54,18 +52,17 @@ public class DockerDiscoveryServiceTest {
     @Test
     public void testLookupByNameAndPort() throws Exception {
 
-        AtomicReference<AsyncResult<ServiceDefinition>> resultAtomicReference = new AtomicReference<>();
+        AtomicReference<ServiceDefinition> resultAtomicReference = new AtomicReference<>();
         CountDownLatch latch = new CountDownLatch(1);
-        discoveryService.lookupServiceByNameAndContainerPort("httpd", 80, serviceDefinitionAsyncResult -> {
+        discoveryService.lookupServiceByNameAndContainerPort(serviceDefinitionAsyncResult -> {
             resultAtomicReference.set(serviceDefinitionAsyncResult);
             latch.countDown();
-        });
+        }, "httpd", 80);
 
         latch.await(5, TimeUnit.SECONDS);
 
         assertNotNull(resultAtomicReference.get());
-        assertTrue(resultAtomicReference.get().succeeded());
-        ServiceDefinition serviceDefinition = resultAtomicReference.get().result();
+        ServiceDefinition serviceDefinition = resultAtomicReference.get();
 
         assertFalse(serviceDefinition.getAddress().isEmpty());
     }

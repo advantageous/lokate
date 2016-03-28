@@ -3,6 +3,7 @@ package com.redbullsoundselect.platform.discovery.impl;
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -71,7 +72,7 @@ public class DnsDiscoveryServiceUsingARecords implements DiscoveryService {
 
     public void doLookupServiceByName(final String name,
                                       final Iterator<String> hosts,
-                                      final Handler<AsyncResult<ServiceDefinition>> result,
+                                      final Callback<ServiceDefinition> result,
                                       final Function<List<String>, ServiceDefinition> found) {
 
         if (logger.isDebugEnabled()) {
@@ -82,10 +83,10 @@ public class DnsDiscoveryServiceUsingARecords implements DiscoveryService {
                 vertx.createDnsClient(dnsPort, dnsHost1).resolveA(name + suffix, dnsResults -> {
                     if (dnsResults.succeeded()) {
                         ServiceDefinition serviceDefinition = found.apply(dnsResults.result());
-                        result.handle(Future.succeededFuture(serviceDefinition));
+                        result.returnThis(serviceDefinition);
                     } else {
                         if (!hosts.hasNext()) {
-                            result.handle(Future.failedFuture(dnsResults.cause()));
+                            result.onError(new IllegalStateException(dnsResults.cause()));
                         } else {
                             doLookupServiceByName(name, hosts, result, found);
                         }
@@ -95,8 +96,8 @@ public class DnsDiscoveryServiceUsingARecords implements DiscoveryService {
     }
 
     @Override
-    public void lookupServiceByName(final String name,
-                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByName(final Callback<ServiceDefinition> result,
+                                    final String name) {
 
         doLookupServiceByName(name, dnsHosts.iterator(), result, dnsResults ->
                 createServiceDefinition(dnsResults, name));
@@ -121,9 +122,9 @@ public class DnsDiscoveryServiceUsingARecords implements DiscoveryService {
     }
 
     @Override
-    public void lookupServiceByNameAndContainerPort(final String name,
-                                                    final int port,
-                                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
+                                                    final String name,
+                                                    final int port) {
 
         doLookupServiceByName(name, dnsHosts.iterator(), result, dnsResults ->
                 createServiceDefinitionWithPort(dnsResults, port));

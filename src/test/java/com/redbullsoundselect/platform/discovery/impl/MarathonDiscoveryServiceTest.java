@@ -1,5 +1,7 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
+import com.redbullsoundselect.platform.discovery.ServiceDefinition;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -31,12 +33,11 @@ public class MarathonDiscoveryServiceTest {
 
         final Async async = context.async();
 
-        marathonDiscoveryService.lookupServiceByName("chronos",
+        marathonDiscoveryService.lookupServiceByName(
                 serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.succeeded());
-                    context.assertTrue(serviceDefinitionAsyncResult.result().getPort() > 10_000);
+                    context.assertTrue(serviceDefinitionAsyncResult.getPort() > 10_000);
                     async.complete();
-                });
+                }, "chronos");
     }
 
     @Test
@@ -44,13 +45,11 @@ public class MarathonDiscoveryServiceTest {
 
         final Async async = context.async();
 
-        marathonDiscoveryService.lookupServiceByNameAndContainerPort("chronos", 8080,
-                serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.succeeded());
-                    context.assertNotNull(serviceDefinitionAsyncResult.result().getAddress());
-                    context.assertNotNull(serviceDefinitionAsyncResult.result().getPort());
-                    async.complete();
-                });
+        marathonDiscoveryService.lookupServiceByNameAndContainerPort(serviceDefinitionAsyncResult -> {
+            context.assertNotNull(serviceDefinitionAsyncResult.getAddress());
+            context.assertNotNull(serviceDefinitionAsyncResult.getPort());
+            async.complete();
+        }, "chronos", 8080);
     }
 
     @Test
@@ -58,10 +57,16 @@ public class MarathonDiscoveryServiceTest {
 
         final Async async = context.async();
 
-        marathonDiscoveryService.lookupServiceByNameAndContainerPort("crap", 9000,
-                serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.failed());
-                    async.complete();
-                });
+        marathonDiscoveryService.lookupServiceByNameAndContainerPort(new Callback<ServiceDefinition>() {
+            @Override
+            public void accept(ServiceDefinition serviceDefinition) {
+            }
+
+            @Override
+            public void onError(Throwable error) {
+                async.complete();
+            }
+        }, "crap", 9000);
+
     }
 }

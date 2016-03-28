@@ -1,5 +1,7 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
+import com.redbullsoundselect.platform.discovery.ServiceDefinition;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.RunTestOnContext;
@@ -34,12 +36,11 @@ public class AmazonEc2DiscoveryServiceTest {
 
         final Async async = context.async();
 
-        ec2DiscoveryService.lookupServiceByName("rbss.staging.zookeeper1",
-                serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.succeeded());
-                    context.assertEquals(8080, serviceDefinitionAsyncResult.result().getPort());
+        ec2DiscoveryService.lookupServiceByName(serviceDefinitionAsyncResult -> {
+                    context.assertEquals(8080, serviceDefinitionAsyncResult.getPort());
                     async.complete();
-                });
+                }, "rbss.staging.zookeeper1"
+                );
 
     }
 
@@ -49,13 +50,21 @@ public class AmazonEc2DiscoveryServiceTest {
 
         final Async async = context.async();
 
-        ec2DiscoveryService.lookupServiceByName("bullshit",
-                serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.failed());
-                    serviceDefinitionAsyncResult.cause().printStackTrace();
-                    async.complete();
-                }
+        ec2DiscoveryService.lookupServiceByName(new Callback<ServiceDefinition>() {
+                                                    @Override
+                                                    public void accept(final ServiceDefinition serviceDefinition) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onError(Throwable cause) {
+                                                        cause.printStackTrace();
+                                                        async.complete();
+
+                                                    }
+                                                }, "bullshit"
         );
+
     }
 
     @Test
@@ -63,12 +72,11 @@ public class AmazonEc2DiscoveryServiceTest {
 
         final Async async = context.async();
 
-        ec2DiscoveryService.lookupServiceByNameAndContainerPort("rbss.staging.zookeeper1", 8080,
+        ec2DiscoveryService.lookupServiceByNameAndContainerPort(
                 serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.succeeded());
-                    context.assertEquals(8080, serviceDefinitionAsyncResult.result().getPort());
+                    context.assertEquals(8080, serviceDefinitionAsyncResult.getPort());
                     async.complete();
                 }
-        );
+                ,"rbss.staging.zookeeper1", 8080);
     }
 }

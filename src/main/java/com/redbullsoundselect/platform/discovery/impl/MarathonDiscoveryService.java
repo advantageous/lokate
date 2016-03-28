@@ -3,9 +3,7 @@ package com.redbullsoundselect.platform.discovery.impl;
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.*;
 import io.vertx.core.json.JsonArray;
@@ -71,8 +69,8 @@ public class MarathonDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void lookupServiceByName(final String name,
-                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByName(final Callback<ServiceDefinition> result,
+                                    final String name) {
 
         final HttpClientRequest request = createHttpClient().request(HttpMethod.GET, GET_TASKS,
                 clientResponseFromAppCall -> {
@@ -88,15 +86,15 @@ public class MarathonDiscoveryService implements DiscoveryService {
                     }
                 });
 
-        request.exceptionHandler(throwable -> result.handle(Future.failedFuture(throwable)));
+        request.exceptionHandler(result::onError);
         request.end();
     }
 
 
     @Override
-    public void lookupServiceByNameAndContainerPort(final String name,
-                                                    final int port,
-                                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
+                                                    final String name,
+                                                    final int port) {
 
         final HttpClientRequest request = createHttpClient().request(HttpMethod.GET, GET_TASKS,
                 clientResponseFromAppCall -> {
@@ -112,14 +110,14 @@ public class MarathonDiscoveryService implements DiscoveryService {
                     }
                 });
 
-        request.exceptionHandler(throwable -> result.handle(Future.failedFuture(throwable)));
+        request.exceptionHandler(result::onError);
         request.end();
     }
 
     private void findServiceFromResponsesWithPort(final String name,
                                                   final int port,
                                                   final JsonArray responseFromTaskCall,
-                                                  final Handler<AsyncResult<ServiceDefinition>> result) {
+                                                  final Callback<ServiceDefinition> result) {
 
         final List<ServiceDefinition> serviceDefinitions = responseFromTaskCall
                 .stream()
@@ -133,21 +131,21 @@ public class MarathonDiscoveryService implements DiscoveryService {
     }
 
     private void extractDefinition(final String name,
-                                   final Handler<AsyncResult<ServiceDefinition>> result,
+                                   final Callback<ServiceDefinition> result,
                                    final List<ServiceDefinition> serviceDefinitions) {
 
         if (serviceDefinitions.size() == 0) {
             logger.error("Service was not found {}, there are 0 services by that name in Marathon.", name);
-            result.handle(Future.failedFuture(new IllegalStateException("Service Not Found")));
+            result.onError(new IllegalStateException("Service Not Found " + name));
         } else {
             final int index = Math.abs(random.nextInt() % (serviceDefinitions.size()));
-            result.handle(Future.succeededFuture(serviceDefinitions.get(index)));
+            result.returnThis(serviceDefinitions.get(index));
         }
     }
 
     private void findServiceFromResponsesFirstPort(final String name,
                                                    final JsonArray responseFromTaskCall,
-                                                   final Handler<AsyncResult<ServiceDefinition>> result) {
+                                                   final Callback<ServiceDefinition> result) {
 
         if (logger.isInfoEnabled()) {
             logger.info("Finding service {}", name);
@@ -218,14 +216,13 @@ public class MarathonDiscoveryService implements DiscoveryService {
     }
 
     private void handleErrorCase(final HttpClientResponse httpClientResponse,
-                                 final Handler<AsyncResult<ServiceDefinition>> result,
+                                 final Callback<ServiceDefinition> result,
                                  final String name) {
 
         logger.error("Service not found {}, Marathon returned code {}, {}",
                 httpClientResponse.statusCode(),
                 httpClientResponse.statusMessage());
-        result.handle(Future.failedFuture(
-                String.format("Unable to get service %s from %s %d due to %s status code %d",
+        result.onError(new IllegalStateException(String.format("Unable to get service %s from %s %d due to %s status code %d",
                         name, marathonHost, marathonPort, httpClientResponse.statusMessage(),
                         httpClientResponse.statusCode())
         ));

@@ -8,9 +8,9 @@ import com.amazonaws.services.ec2.model.Instance;
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import com.redbullsoundselect.platform.discovery.ServiceDefinition;
 import com.typesafe.config.Config;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,22 +118,22 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void lookupServiceByName(final String name,
-                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByName(final Callback<ServiceDefinition> result,
+                                    final String name) {
         final int port = this.nameToPort.getOrDefault(name, -1);
         callEc2LookupAsync(name, result, port);
     }
 
 
     @Override
-    public void lookupServiceByNameAndContainerPort(final String name,
-                                                    final int port,
-                                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
+                                                    final String name,
+                                                    final int port) {
         callEc2LookupAsync(name, result, port);
     }
 
     private void callEc2LookupAsync(final String name,
-                                    final Handler<AsyncResult<ServiceDefinition>> result,
+                                    final Callback<ServiceDefinition> result,
                                     final int port) {
 
         vertx.executeBlocking(future ->
@@ -142,12 +142,12 @@ public class AmazonEc2DiscoveryService implements DiscoveryService {
         );
     }
 
-    private void extractAsyncCallToResult(final Handler<AsyncResult<ServiceDefinition>> result,
+    private void extractAsyncCallToResult(final Callback<ServiceDefinition> result,
                                           final AsyncResult<Object> asyncResult) {
         if (asyncResult.failed()) {
-            result.handle(Future.failedFuture(asyncResult.cause()));
+            result.onError(asyncResult.cause());
         } else {
-            result.handle(Future.succeededFuture((ServiceDefinition) asyncResult.result()));
+            result.returnThis((ServiceDefinition) asyncResult.result());
         }
     }
 

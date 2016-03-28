@@ -1,15 +1,10 @@
 package com.redbullsoundselect.platform.discovery;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.advantageous.qbit.reactive.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Created by gcc on 2/5/16.
@@ -22,14 +17,11 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private boolean healthy = true;
-
     public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
         this.discoveryServices = Arrays.asList(discoveryServices);
         if (logger.isDebugEnabled()) {
-            this.discoveryServices.forEach(discoveryService -> {
-                logger.debug("Using Discovery Service {}", discoveryService.getClass().getName());
-            });
+            this.discoveryServices.forEach(discoveryService ->
+                    logger.debug("Using Discovery Service {}", discoveryService.getClass().getName()));
         }
     }
 
@@ -38,29 +30,28 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         return !iterator.hasNext() ? Optional.empty() : Optional.of(iterator.next());
     }
 
-    private void queryProviderByName(final String name,
-                                     final Iterator<DiscoveryService> iterator,
-                                     final Handler<AsyncResult<ServiceDefinition>> result) {
+    private void queryProviderByName(final Callback<ServiceDefinition> result,
+                                     final String name,
+                                     final Iterator<DiscoveryService> iterator) {
 
         if (logger.isDebugEnabled()) {
             logger.debug("queryProviderByName name {} ", name);
         }
 
         try {
-            queryDiscoveryProviders(name, iterator, result,
-                    (discoveryService, handler) ->
-                            discoveryService.lookupServiceByName(name, handler),
-                    () -> queryProviderByName(name, iterator, result));
+            queryDiscoveryProviders(result, name, iterator,
+                    (handler, discoveryService) ->
+                            discoveryService.lookupServiceByName(handler, name),
+                    () -> queryProviderByName(result, name, iterator));
         } catch (Exception ex) {
             logger.error("Unable to query", ex);
-            healthy = false;
         }
     }
 
-    private void queryProviderByNameAndContainerPort(final String name,
+    private void queryProviderByNameAndContainerPort(final Callback<ServiceDefinition> result,
+                                                     final String name,
                                                      final int containerPort,
-                                                     final Iterator<DiscoveryService> iterator,
-                                                     final Handler<AsyncResult<ServiceDefinition>> result) {
+                                                     final Iterator<DiscoveryService> iterator) {
 
         if (logger.isDebugEnabled()) {
             logger.debug("queryProviderByNameAndContainerPort name {}, port {} ", name, containerPort);
@@ -68,64 +59,71 @@ public class DiscoveryServiceImpl implements DiscoveryService {
 
 
         try {
-            queryDiscoveryProviders(name, iterator, result,
-                    (discoveryService, handler) ->
-                            discoveryService.lookupServiceByNameAndContainerPort(name, containerPort, handler),
-                    () -> queryProviderByNameAndContainerPort(name, containerPort, iterator, result));
+            queryDiscoveryProviders(result, name, iterator,
+                    (handler, discoveryService) ->
+                            discoveryService.lookupServiceByNameAndContainerPort(handler, name, containerPort),
+                    () -> queryProviderByNameAndContainerPort(result, name, containerPort, iterator));
         } catch (Exception ex) {
             logger.error("Unable to query", ex);
-            healthy = false;
         }
     }
 
-    private void queryDiscoveryProviders(final String name,
+    /** TODO */
+    private void queryDiscoveryProviders(final Callback<ServiceDefinition> result,
+                                         final String name,
                                          final Iterator<DiscoveryService> iterator,
-                                         final Handler<AsyncResult<ServiceDefinition>> result,
                                          final LookupCall lookupCall,
                                          final Runnable repeat) {
 
         getNextProvider(iterator).ifPresent(discoveryProvider ->
-                lookupCall.lookup(discoveryProvider, asyncResult -> {
-                    if (asyncResult.succeeded()) {
-                        healthy = true;
-                        result.handle(asyncResult);
-                    } else {
+
+
+                lookupCall.lookup(new Callback<ServiceDefinition>() {
+                    @Override
+                    public void accept(final ServiceDefinition serviceDefinition) {
+                        result.returnThis(serviceDefinition);
+                    }
+
+                    @Override
+                    public void onError(final Throwable cause) {
+
                         if (!iterator.hasNext()) {
                             logger.error("Unable to find service {} from any provider ", name);
-                            logger.error("Unable to find service from any provider", asyncResult.cause());
-                            result.handle(asyncResult);
-                            healthy = false;
+                            logger.error("Unable to find service from any provider", cause);
+                            result.onError(new IllegalStateException("Unable to find service from any provider for name "
+                                    + name, cause));
                         }
                         logger.info("Unable to find service {} from provider {}",
                                 name, discoveryProvider.getClass().getSimpleName());
 
                         repeat.run();
                     }
-                })
+
+                    @Override
+                    public void onTimeout() {
+                        onError(new TimeoutException("Call to lookup " + name + " timed out"));
+                    }
+                }, discoveryProvider)
         );
     }
 
-    @Override
-    public void checkHealth(final Handler<AsyncResult<Boolean>> healthCheckResultHandler) {
 
-        healthCheckResultHandler.handle(Future.succeededFuture(healthy));
+    @Override
+    public void lookupServiceByName(final Callback<ServiceDefinition> result,
+                                    final String name) {
+
+        queryProviderByName(result, name, discoveryServices.iterator());
     }
 
     @Override
-    public void lookupServiceByName(final String name, final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
+                                                    final String name,
+                                                    final int port) {
 
-        queryProviderByName(name, discoveryServices.iterator(), result);
-    }
-
-    @Override
-    public void lookupServiceByNameAndContainerPort(final String name,
-                                                    final int port,
-                                                    final Handler<AsyncResult<ServiceDefinition>> result) {
-
-        queryProviderByNameAndContainerPort(name, port, discoveryServices.iterator(), result);
+        queryProviderByNameAndContainerPort(result, name, port, discoveryServices.iterator());
     }
 
     private interface LookupCall {
-        void lookup(DiscoveryService discoveryService, Handler<AsyncResult<ServiceDefinition>> handler);
+        void lookup(Callback<ServiceDefinition> handler, DiscoveryService discoveryService);
     }
 }

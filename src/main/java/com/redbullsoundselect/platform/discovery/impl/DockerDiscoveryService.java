@@ -2,9 +2,7 @@ package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import com.redbullsoundselect.platform.discovery.ServiceDefinition;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
 import io.vertx.core.http.HttpClientRequest;
@@ -18,8 +16,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static io.vertx.core.Future.failedFuture;
-import static io.vertx.core.Future.succeededFuture;
 
 /**
  * Uses Docker REST API to find services by name.
@@ -46,8 +42,8 @@ public class DockerDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void lookupServiceByName(final String name,
-                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByName(final Callback<ServiceDefinition> result,
+                                    final String name) {
 
 
         logger.debug("Docker lookupServiceByName  {}", name);
@@ -70,12 +66,12 @@ public class DockerDiscoveryService implements DiscoveryService {
     }
 
     @Override
-    public void lookupServiceByNameAndContainerPort(final String name,
-                                                    final int containerPort,
-                                                    final Handler<AsyncResult<ServiceDefinition>> result) {
+    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
+                                                    final String name,
+                                                    final int containerPort) {
 
 
-        logger.debug("Docker lookupServiceByNameAndContainerPort  {} {}" ,name, containerPort);
+        logger.debug("Docker lookupServiceByNameAndContainerPort  {} {}", name, containerPort);
         this.queryDocker(result,
                 json -> Optional.of(json)
                         .map(o -> o.getString("Image"))
@@ -103,7 +99,7 @@ public class DockerDiscoveryService implements DiscoveryService {
                 });
     }
 
-    private void queryDocker(final Handler<AsyncResult<ServiceDefinition>> result,
+    private void queryDocker(final Callback<ServiceDefinition> result,
                              final Predicate<JsonObject> filter,
                              final Function<Object, ServiceDefinition> transformResultToServiceDefinition) {
 
@@ -114,17 +110,16 @@ public class DockerDiscoveryService implements DiscoveryService {
 
 
         if (logger.isInfoEnabled()) {
-            final StringBuilder builder = new StringBuilder();
-            builder.append("curl -H \"Content-type: application/json\" -H \"Accept: application/json\" ")
-                    .append("http://").append(dockerHost).append(":").append(dockerPort).append("/containers/json");
-            logger.info("About to make REST call  \n{}\n", builder.toString());
+            final String message = "curl -H \"Content-type: application/json\" -H \"Accept: application/json\" " +
+                    "http://" + dockerHost + ":" + dockerPort + "/containers/json";
+            logger.info("About to make REST call  \n{}\n", message);
         }
 
         request.exceptionHandler(throwable -> {
             if (logger.isDebugEnabled()) {
                 logger.debug("Unable to query docker {} {}", dockerHost, dockerPort);
             }
-            result.handle(Future.failedFuture(throwable));
+            result.onError(throwable);
         });
 
         request.handler(httpClientResponse -> {
@@ -136,7 +131,7 @@ public class DockerDiscoveryService implements DiscoveryService {
                             transformResultToServiceDefinition, jsonArray);
                 });
             } else {
-                result.handle(Future.failedFuture(String.format("Unable to find %d %s", httpClientResponse.statusCode(),
+                result.onError(new IllegalStateException(String.format("Unable to find %d %s", httpClientResponse.statusCode(),
                         httpClientResponse.statusMessage())));
             }
         });
@@ -146,7 +141,7 @@ public class DockerDiscoveryService implements DiscoveryService {
 
     }
 
-    private void handleResponseBodyFromDocker(final Handler<AsyncResult<ServiceDefinition>> result,
+    private void handleResponseBodyFromDocker(final Callback<ServiceDefinition> result,
                                               final Predicate<JsonObject> filter,
                                               final Function<Object, ServiceDefinition> transformResultToServiceDefinition,
                                               final JsonArray jsonArray) {
@@ -158,9 +153,9 @@ public class DockerDiscoveryService implements DiscoveryService {
                 .map(transformResultToServiceDefinition::apply)
                 .findAny();
         if (serviceDefinition.isPresent()) {
-            result.handle(succeededFuture(serviceDefinition.get()));
+            result.returnThis(serviceDefinition.get());
         } else {
-            result.handle(failedFuture(String.format("Could not find service by predicate %s", filter)));
+            result.onError(new IllegalStateException(String.format("Could not find service by predicate %s", filter)));
         }
     }
 

@@ -1,6 +1,7 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullsoundselect.platform.discovery.ServiceDefinition;
+import io.advantageous.qbit.reactive.Callback;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -74,12 +75,10 @@ public class DnsDiscoveryServiceUsingARecordsTest {
 
         final Async async = context.async();
 
-        dnsDiscoveryService.lookupServiceByName("ipsec1",
-                serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.succeeded());
-                    context.assertEquals(100, serviceDefinitionAsyncResult.result().getPort());
+        dnsDiscoveryService.lookupServiceByName(serviceDefinitionAsyncResult -> {
+                    context.assertEquals(100, serviceDefinitionAsyncResult.getPort());
                     async.complete();
-                });
+                }, "ipsec1");
 
     }
 
@@ -89,12 +88,21 @@ public class DnsDiscoveryServiceUsingARecordsTest {
 
         final Async async = context.async();
 
-        dnsDiscoveryService.lookupServiceByName("bullshit",
-                serviceDefinitionAsyncResult -> {
-                    context.assertTrue(serviceDefinitionAsyncResult.failed());
-                    serviceDefinitionAsyncResult.cause().printStackTrace();
-                    async.complete();
-                });
+        dnsDiscoveryService.lookupServiceByName(new Callback<ServiceDefinition>() {
+                                                    @Override
+                                                    public void accept(ServiceDefinition serviceDefinition) {
+
+                                                    }
+
+                                                    @Override
+                                                    public void onError(Throwable cause) {
+                                                        cause.printStackTrace();
+                                                        async.complete();
+
+                                                    }
+                                                },"bullshit"
+        );
+
 
     }
 
@@ -103,11 +111,10 @@ public class DnsDiscoveryServiceUsingARecordsTest {
 
         final Async async = context.async();
 
-        dnsDiscoveryService.lookupServiceByNameAndContainerPort("ipsec1", 101,
-                serviceDefinitionAsyncResult -> {
-                    context.assertEquals(101, serviceDefinitionAsyncResult.result().getPort());
-                    async.complete();
-                });
+        dnsDiscoveryService.lookupServiceByNameAndContainerPort(serviceDefinitionAsyncResult -> {
+            context.assertEquals(101, serviceDefinitionAsyncResult.getPort());
+            async.complete();
+        }, "ipsec1", 101);
 
     }
 
