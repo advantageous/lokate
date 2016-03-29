@@ -53,12 +53,12 @@ dependencies {
 //TODO: Test categories should be moved out to test jar and tasks provided in platform
 test {
     useJUnit {
-        includeCategories 'com.redbullsoundselect.test.UnitTest'
+        includeCategories 'com.redbullsoundselect.platform.UnitTests'
     }
 }
 task itest(type: Test) {
     useJUnit {
-        includeCategories 'com.redbullsoundselect.test.IntegrationTest'
+        includeCategories 'com.redbullsoundselect.platform.IntegrationTests'
     }
 }
 itest.finalizedBy stopTestDocker
