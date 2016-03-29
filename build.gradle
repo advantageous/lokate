@@ -4,17 +4,17 @@ buildscript {
         maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/plugins-release/' }
     }
     dependencies {
-        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.2.1'
+        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.2.2'
     }
 }
 
 plugins {
     id 'java'
-    id 'distribution'
     id "net.saliman.cobertura" version "2.3.0"
     id 'idea'
     id "maven"
 }
+
 
 apply plugin: 'rbss-devops'
 
@@ -23,7 +23,7 @@ ext {
 }
 
 group 'com.redbullsoundselect.platform'
-version '0.2.0-SNAPSHOT'
+version '0.2.1'
 
 sourceCompatibility = '1.8'
 
@@ -69,30 +69,6 @@ testDockerContainers {
         publishAll true
         containerName "httpd"
         image "httpd"
-    }
-}
-
-mesosEnvironments {
-    staging {
-        url "http://mesos-master1.rbss.staging.rbmhops.net:8080/v2/apps"
-        instances 1
-        cpus 1
-        mem 256
-        healthCheck()
-    }
-    preprod {
-        url "http://mesos-master1.rbss.preprod.rbmhops.net:8080/v2/apps"
-        instances 3
-        cpus 1
-        mem 256
-        healthCheck()
-    }
-    production {
-        url "http://mesos-master1.rbss.prod.rbmhops.net:8080/v2/apps"
-        instances 3
-        cpus 1
-        mem 256
-        healthCheck()
     }
 }
 
