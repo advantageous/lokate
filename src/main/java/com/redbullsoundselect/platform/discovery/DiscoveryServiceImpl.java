@@ -1,129 +1,80 @@
 package com.redbullsoundselect.platform.discovery;
 
-import io.advantageous.qbit.reactive.Callback;
+import io.advantageous.reakt.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.*;
-import java.util.concurrent.TimeoutException;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.ServiceLoader.load;
 
 /**
- * Created by gcc on 2/5/16.
+ * docker:http://localhost:3500/
+ * dns://localhost:8600/
+ * marathon:http://marathon.staging.rbmhops.net:8080/
+ * aws:http://ec2.us-west-2.amazonaws.com/?env=staging
+ * <p>
+ * discovery:docker:///impressions-service?containerPort=8080
+ * discovery:docker:http://localhost:3500/impressions-service?containerPort=8080
+ * <p>
+ * discovery:dns:A:///admin.rbss-impressions-service-staging.service.consul?port=9090
+ * discovery:dns:A://localhost:8600/admin.rbss-impressions-service-staging.service.consul?port=8080
+ * <p>
+ * discovery:dns:SRV:///admin.rbss-impressions-service-staging.service.consul
+ * discovery:dns:SRV://localhost:8600/admin.rbss-impressions-service-staging.service.consul
+ * <p>
+ * discovery:marathon:///impressions-service?portIndex=0
+ * discovery:marathon:http://marathon.rbmhops.net:8080/impressions-service?portIndex=0
+ * <p>
+ * discovery:consul:///impressions-service?name=eventbus&staging
+ * discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbus&staging
+ * <p>
+ * discovery:aws:///impressions-service?port=8080
+ * discovery:aws:http://ec2.us-west-2.amazonaws.com/impressions-service?port=8080
+ * <p>
+ * discovery:echo:http://localhost:8080/myservice
  *
  * @author rick and geoff
  */
 public class DiscoveryServiceImpl implements DiscoveryService {
 
-    private final List<DiscoveryService> discoveryServices;
-
+    private final Map<String, DiscoveryService> discoveryServices = new HashMap<>();
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
-        this.discoveryServices = Arrays.asList(discoveryServices);
-        if (logger.isDebugEnabled()) {
-            this.discoveryServices.forEach(discoveryService ->
-                    logger.debug("Using Discovery Service {}", discoveryService.getClass().getName()));
-        }
-    }
+    /**
+     * Create a DiscoveryService with a list of service endpoint configurations.  These configurations will be passed to
+     * the factories that are registered for their schemes.
+     *
+     * @param endpointConfigurations list of URIs that configure the various discovery service factories
+     */
+    public DiscoveryServiceImpl(final List<URI> endpointConfigurations) {
 
-
-    private Optional<DiscoveryService> getNextProvider(final Iterator<DiscoveryService> iterator) {
-        return !iterator.hasNext() ? Optional.empty() : Optional.of(iterator.next());
-    }
-
-    private void queryProviderByName(final Callback<ServiceDefinition> result,
-                                     final String name,
-                                     final Iterator<DiscoveryService> iterator) {
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("queryProviderByName name {} ", name);
-        }
-
-        try {
-            queryDiscoveryProviders(result, name, iterator,
-                    (handler, discoveryService) ->
-                            discoveryService.lookupServiceByName(handler, name),
-                    () -> queryProviderByName(result, name, iterator));
-        } catch (Exception ex) {
-            logger.error("Unable to query", ex);
-        }
-    }
-
-    private void queryProviderByNameAndContainerPort(final Callback<ServiceDefinition> result,
-                                                     final String name,
-                                                     final int containerPort,
-                                                     final Iterator<DiscoveryService> iterator) {
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("queryProviderByNameAndContainerPort name {}, port {} ", name, containerPort);
-        }
-
-
-        try {
-            queryDiscoveryProviders(result, name, iterator,
-                    (handler, discoveryService) ->
-                            discoveryService.lookupServiceByNameAndContainerPort(handler, name, containerPort),
-                    () -> queryProviderByNameAndContainerPort(result, name, containerPort, iterator));
-        } catch (Exception ex) {
-            logger.error("Unable to query", ex);
-        }
-    }
-
-    /** TODO */
-    private void queryDiscoveryProviders(final Callback<ServiceDefinition> result,
-                                         final String name,
-                                         final Iterator<DiscoveryService> iterator,
-                                         final LookupCall lookupCall,
-                                         final Runnable repeat) {
-
-        getNextProvider(iterator).ifPresent(discoveryProvider ->
-
-
-                lookupCall.lookup(new Callback<ServiceDefinition>() {
-                    @Override
-                    public void accept(final ServiceDefinition serviceDefinition) {
-                        result.returnThis(serviceDefinition);
-                    }
-
-                    @Override
-                    public void onError(final Throwable cause) {
-
-                        if (!iterator.hasNext()) {
-                            logger.error("Unable to find service {} from any provider ", name);
-                            logger.error("Unable to find service from any provider", cause);
-                            result.onError(new IllegalStateException("Unable to find service from any provider for name "
-                                    + name, cause));
-                        }
-                        logger.info("Unable to find service {} from provider {}",
-                                name, discoveryProvider.getClass().getSimpleName());
-
-                        repeat.run();
-                    }
-
-                    @Override
-                    public void onTimeout() {
-                        onError(new TimeoutException("Call to lookup " + name + " timed out"));
-                    }
-                }, discoveryProvider)
-        );
-    }
-
-
-    @Override
-    public void lookupServiceByName(final Callback<ServiceDefinition> result,
-                                    final String name) {
-
-        queryProviderByName(result, name, discoveryServices.iterator());
+        final List<DiscoveryServiceFactory> factoryList = new ArrayList<>();
+        load(DiscoveryServiceFactory.class).forEach(factoryList::add);
+        load(DiscoveryServiceFactory.class, DiscoveryServiceImpl.class.getClassLoader()).forEach(factoryList::add);
+        if (factoryList.isEmpty()) throw new IllegalStateException("Cannot find Factory under META-INF/services/"
+                + DiscoveryServiceFactory.class.getName() + " on classpath");
+        factoryList.forEach(factory -> {
+            logger.debug("Using DiscoveryService {} with scheme {}", factory.getClass().getName(), factory.getScheme());
+            discoveryServices.put(factory.getScheme(), factory.create(endpointConfigurations.stream()
+                    .filter(uri -> uri.getScheme().equals(factory.getScheme()))
+                    .collect(Collectors.toList()))
+            );
+        });
     }
 
     @Override
-    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
-                                                    final String name,
-                                                    final int port) {
-
-        queryProviderByNameAndContainerPort(result, name, port, discoveryServices.iterator());
+    public Promise<ServiceDefinition> lookupService(final URI query) {
+        if (!query.getScheme().equals(QUERY_SCHEME))
+            throw new IllegalArgumentException("discovery uris must begin with \"" + QUERY_SCHEME + ":\"");
+        return this.discoveryServices.computeIfAbsent(URI.create(query.getSchemeSpecificPart()).getScheme(), (key) -> {
+            throw new IllegalArgumentException("discovery scheme not registered: " + QUERY_SCHEME + ":" + key);
+        }).lookupService(query);
     }
 
-    private interface LookupCall {
-        void lookup(Callback<ServiceDefinition> handler, DiscoveryService discoveryService);
-    }
 }
