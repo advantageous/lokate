@@ -5,10 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.ServiceLoader.load;
@@ -39,8 +36,10 @@ import static java.util.ServiceLoader.load;
  * <p>
  * discovery:echo:http://localhost:8080/myservice
  *
- * @author rick and geoff
+ * @author Geoff Chandler
+ * @author Rick Hightower
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class DiscoveryServiceImpl implements DiscoveryService {
 
     private final Map<String, DiscoveryService> discoveryServices = new HashMap<>();
@@ -50,26 +49,46 @@ public class DiscoveryServiceImpl implements DiscoveryService {
      * Create a DiscoveryService with a list of service endpoint configurations.  These configurations will be passed to
      * the factories that are registered for their schemes.
      *
-     * @param endpointConfigurations list of URIs that configure the various discovery service factories
+     * @param endpointConfigurations URIs that configure the various discovery service factories
      */
-    public DiscoveryServiceImpl(final List<URI> endpointConfigurations) {
+    public DiscoveryServiceImpl(final URI... endpointConfigurations) {
 
-        final List<DiscoveryServiceFactory> factoryList = new ArrayList<>();
-        load(DiscoveryServiceFactory.class).forEach(factoryList::add);
-        load(DiscoveryServiceFactory.class, DiscoveryServiceImpl.class.getClassLoader()).forEach(factoryList::add);
-        if (factoryList.isEmpty()) throw new IllegalStateException("Cannot find Factory under META-INF/services/"
-                + DiscoveryServiceFactory.class.getName() + " on classpath");
-        factoryList.forEach(factory -> {
-            logger.debug("Using DiscoveryService {} with scheme {}", factory.getClass().getName(), factory.getScheme());
-            discoveryServices.put(factory.getScheme(), factory.create(endpointConfigurations.stream()
-                    .filter(uri -> uri.getScheme().equals(factory.getScheme()))
-                    .collect(Collectors.toList()))
-            );
-        });
+        /*
+        First we load all the factories listed in META-INF services into map
+         */
+        final Map<String, DiscoveryServiceFactory> factoryMap = new HashMap<>();
+        load(DiscoveryServiceFactory.class).forEach((factory -> factoryMap.put(factory.getScheme(), factory)));
+        load(DiscoveryServiceFactory.class, DiscoveryServiceImpl.class.getClassLoader()).forEach(factory ->
+                factoryMap.put(factory.getScheme(), factory)
+        );
+
+        /*
+        Now we create a configuration map that groups the URIs with the same scheme
+         */
+        final Map<String, List<URI>> configMap = new HashMap<>();
+        Arrays.asList(endpointConfigurations).forEach(uri ->
+                configMap.computeIfAbsent(uri.getScheme(), scheme -> new ArrayList<>()).add(uri)
+        );
+
+        /*
+        Finally we create each discovery service using the grouped configuration and put them in the registry map.
+         */
+        configMap.entrySet().forEach((entry) -> this.registerService(entry.getKey(),
+                factoryMap.computeIfAbsent(entry.getKey(), (scheme) -> {
+                    throw new IllegalArgumentException("no factory for scheme " + scheme);
+                }).create(entry.getValue()))
+        );
     }
 
+    /**
+     * Lookup a service with a URI Query.
+     *
+     * @param query the URI that defines your query
+     * @return a service definition that matches your query
+     */
     @Override
     public Promise<ServiceDefinition> lookupService(final URI query) {
+        logger.debug("looking up service for query: {}", query);
         if (!query.getScheme().equals(QUERY_SCHEME))
             throw new IllegalArgumentException("discovery uris must begin with \"" + QUERY_SCHEME + ":\"");
         return this.discoveryServices.computeIfAbsent(URI.create(query.getSchemeSpecificPart()).getScheme(), (key) -> {
@@ -77,4 +96,25 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         }).lookupService(query);
     }
 
+    /**
+     * Register a service for a scheme
+     *
+     * @param scheme  the discovery scheme for queries
+     * @param service the service to register
+     */
+    void registerService(final String scheme, final DiscoveryService service) {
+        Objects.requireNonNull(scheme, "scheme must not be null");
+        Objects.requireNonNull(service, "service must be set.");
+        logger.info("registering {} to handle discovery for the schema {}", service.getClass().getSimpleName(), scheme);
+        this.discoveryServices.put(scheme, service);
+    }
+
+    /**
+     * Get a list of the registered services
+     *
+     * @return the list
+     */
+    List<Class> getRegisteredServiceClasses() {
+        return this.discoveryServices.values().stream().map(DiscoveryService::getClass).collect(Collectors.toList());
+    }
 }
