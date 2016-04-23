@@ -25,14 +25,8 @@ import static java.util.ServiceLoader.load;
  * discovery:dns:SRV:///admin.rbss-impressions-service-staging.service.consul
  * discovery:dns:SRV://localhost:8600/admin.rbss-impressions-service-staging.service.consul
  * <p>
- * discovery:marathon:///impressions-service?portIndex=0
- * discovery:marathon:http://marathon.rbmhops.net:8080/impressions-service?portIndex=0
- * <p>
  * discovery:consul:///impressions-service?name=eventbus&staging
  * discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbus&staging
- * <p>
- * discovery:aws:///impressions-service?port=8080
- * discovery:aws:http://ec2.us-west-2.amazonaws.com/impressions-service?port=8080
  * <p>
  * discovery:echo:http://localhost:8080/myservice
  *

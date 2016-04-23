@@ -19,8 +19,9 @@ import static io.advantageous.reakt.promise.Promises.invokablePromise;
 import static io.advantageous.reakt.vertx.ReaktVertx.convertPromise;
 
 /**
- * DNS service discovery that uses A records.
+ * DNS service discovery
  *
+ * @author Geoff Chandler
  * @author Rick Hightower
  */
 class DnsDiscoveryService implements DiscoveryService {
@@ -63,7 +64,20 @@ class DnsDiscoveryService implements DiscoveryService {
             switch (dnsQuery.getScheme()) {
 
                 case A_SCHEME:
-                    resolveA(dnsQuery, promise);
+                    final String portString = UriUtils.splitQuery(dnsQuery.getQuery()).get(PORT_QUERY_KEY);
+                    if (portString == null) {
+                        promise.reject("a port must be set in the query string for a A RECORD query.");
+                        return;
+                    }
+                    final int port;
+                    try {
+                        port = Integer.parseInt(portString);
+                    } catch (final NumberFormatException e) {
+                        promise.reject("the port in the query string must be an integer", e);
+                        return;
+                    }
+
+                    resolveA(0, dnsQuery.getPath().substring(1), port, promise);
                     break;
 
                 case SRV_SCHEME:
@@ -76,27 +90,10 @@ class DnsDiscoveryService implements DiscoveryService {
         });
     }
 
-    private void resolveA(final URI query, final Promise<List<URI>> promise) {
-        final String portString = UriUtils.splitQuery(query.getQuery()).get(PORT_QUERY_KEY);
-        if (portString == null) {
-            promise.reject("a port must be set in the query string for a A RECORD query.");
-            return;
-        }
-        final int port;
-        try {
-            port = Integer.parseInt(portString);
-        } catch (final NumberFormatException e) {
-            promise.reject("the port in the query string must be an integer", e);
-            return;
-        }
-
-        doResolveA(0, query.getPath().substring(1), port, promise);
-    }
-
-    private void doResolveA(final int hostIndex,
-                            final String serviceName,
-                            final int port,
-                            final Promise<List<URI>> promise) {
+    private void resolveA(final int hostIndex,
+                          final String serviceName,
+                          final int port,
+                          final Promise<List<URI>> promise) {
 
         if (hostIndex >= dnsHosts.size()) {
             promise.resolve(Collections.emptyList());
@@ -114,7 +111,7 @@ class DnsDiscoveryService implements DiscoveryService {
                         ))
                         .catchError(error -> {
                             logger.warn("dns lookup failed: ", error);
-                            doResolveA(hostIndex + 1, serviceName, port, promise);
+                            resolveA(hostIndex + 1, serviceName, port, promise);
                         })
                 )
         );
@@ -132,9 +129,8 @@ class DnsDiscoveryService implements DiscoveryService {
         this.vertx.createDnsClient(currentHost.getPort(), currentHost.getHost()).resolveSRV(serviceName,
                 convertPromise(Promises.<List<SrvRecord>>promise()
                         .then(list -> promise.resolve(list.stream()
-                                .map(srv -> RESULT_SCHEME + "://" + srv.target() + ":" + srv.port() + "/" +
-                                        srv.name() + "?priority=" + srv.priority() + "&weight=" + srv.weight())
-                                .map(URI::create)
+                                .map(srv -> URI.create(RESULT_SCHEME + "://" + srv.target() + ":" + srv.port() + "/" +
+                                        srv.name() + "?priority=" + srv.priority() + "&weight=" + srv.weight()))
                                 .collect(Collectors.toList())
                         ))
                         .catchError(error -> {
