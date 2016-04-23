@@ -1,5 +1,3 @@
-com.redbullsoundselect.platform.discovery.impl.AmazonEc2DiscoveryService
-com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryService
-com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryService
-com.redbullsoundselect.platform.discovery.impl.MarathonDiscoveryService
-com.redbullsoundselect.platform.discovery.impl.ConsulDiscoveryService
+com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryServiceFactory
+com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryServiceFactory
+com.redbullsoundselect.platform.discovery.impl.ConsulDiscoveryServiceFactory

@@ -87,13 +87,13 @@ public class DiscoveryServiceImpl implements DiscoveryService {
      * @return a service definition that matches your query
      */
     @Override
-    public Promise<ServiceDefinition> lookupService(final URI query) {
+    public Promise<List<URI>> lookupService(final URI query) {
         logger.debug("looking up service for query: {}", query);
         if (!query.getScheme().equals(QUERY_SCHEME))
             throw new IllegalArgumentException("discovery uris must begin with \"" + QUERY_SCHEME + ":\"");
         return this.discoveryServices.computeIfAbsent(URI.create(query.getSchemeSpecificPart()).getScheme(), (key) -> {
             throw new IllegalArgumentException("discovery scheme not registered: " + QUERY_SCHEME + ":" + key);
-        }).lookupService(query);
+        }).lookupService(URI.create(query.getSchemeSpecificPart()));
     }
 
     /**
