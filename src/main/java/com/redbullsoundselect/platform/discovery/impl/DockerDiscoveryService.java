@@ -1,21 +1,23 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
-import com.redbullsoundselect.platform.discovery.ServiceDefinition;
-import io.advantageous.qbit.reactive.Callback;
+import com.redbullsoundselect.platform.discovery.UriUtils;
+import io.advantageous.reakt.promise.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientRequest;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Optional;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import static io.advantageous.reakt.promise.Promises.invokablePromise;
 
 /**
  * Uses Docker REST API to find services by name.
@@ -25,138 +27,140 @@ import java.util.function.Predicate;
  * <p>
  * If you ask for the container port, it will give you the corresponding public port.
  *
+ * @author Geoff Chandler
  * @author Rick Hightower
  */
-public class DockerDiscoveryService implements DiscoveryService {
+class DockerDiscoveryService implements DiscoveryService {
 
+    static final String SCHEME = "docker";
+    private static final String CONTAINER_PORT_QUERY_KEY = "containerPort";
     private final Vertx vertx;
-    private final int dockerPort;
-    private final String dockerHost;
+    private final int defaultDockerPort;
+    private final String defaultDockerHost;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public DockerDiscoveryService(final Vertx vertx, final String dockerHost, final int dockerPort) {
-        this.vertx = vertx;
-        this.dockerPort = dockerPort;
-        this.dockerHost = dockerHost;
-        logger.debug("DockerDiscoveryService  {} {}", dockerHost, dockerPort);
+    DockerDiscoveryService(final URI... configs) {
+        if (configs.length > 1)
+            throw new UnsupportedOperationException("the docker discovery service only supports one configuration.");
+        if (configs.length == 0)
+            throw new IllegalArgumentException("you must specify a configuration URI for the docker discovery service");
+        final URI config = URI.create(configs[0].getSchemeSpecificPart());
+        this.vertx = Vertx.vertx();
+        this.defaultDockerPort = config.getPort();
+        this.defaultDockerHost = config.getHost();
+        this.logger.debug("DockerDiscoveryService  {} {}", defaultDockerHost, defaultDockerPort);
     }
 
     @Override
-    public void lookupServiceByName(final Callback<ServiceDefinition> result,
-                                    final String name) {
+    public Promise<List<URI>> lookupService(final URI query) {
+        return invokablePromise(promise -> {
+            if (query == null) {
+                promise.reject("query was null");
+                return;
+            }
+            if (!SCHEME.equals(query.getScheme())) {
+                promise.reject(new IllegalArgumentException("query did not have the scheme " + SCHEME));
+                return;
+            }
 
+            final Map<String, String> queryMap = UriUtils.splitQuery(query.getQuery());
+            if (queryMap.containsKey(CONTAINER_PORT_QUERY_KEY)) {
+                lookupServiceByNameAndContainerPort(
+                        query.getHost() != null ? query.getHost() : defaultDockerHost,
+                        query.getPort() != -1 ? query.getPort() : defaultDockerPort,
+                        query.getPath(),
+                        Integer.parseInt(queryMap.get(CONTAINER_PORT_QUERY_KEY)),
+                        promise);
+            } else {
+                lookupServiceByName(
+                        query.getHost() != null ? query.getHost() : defaultDockerHost,
+                        query.getPort() != -1 ? query.getPort() : defaultDockerPort,
+                        query.getPath(),
+                        promise);
+            }
+        });
+    }
+
+    private void lookupServiceByName(final String dockerHost,
+                                     final int dockerPort,
+                                     final String name,
+                                     final Promise<List<URI>> promise) {
 
         logger.debug("Docker lookupServiceByName  {}", name);
-        this.queryDocker(result,
-                json -> Optional.of(json)
-                        .map(o -> o.getString("Image"))
-                        .map(image -> image.split("/"))
-                        .map(array -> array.length > 1 ? array[1] : array[0])
-                        .map(image -> image.split(":"))
-                        .map(array -> array[0])
-                        .get().equals(name),
+        this.queryDocker(
+                dockerHost,
+                dockerPort,
+                promise,
+                json -> (json.getJsonArray("Names").getString(0)).equals(name),
                 json -> {
                     final JsonObject jsonObject = (JsonObject) json;
                     final JsonArray ports = jsonObject.getJsonArray("Ports");
                     final JsonObject portInfo = ports.getJsonObject(0);
                     final Integer publicPort = portInfo.getInteger("PublicPort");
 
-                    return new ServiceDefinition(dockerHost, publicPort);
+                    return URI.create(RESULT_SCHEME + "://" + dockerHost + ":" + publicPort);
                 });
     }
 
-    @Override
-    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
-                                                    final String name,
-                                                    final int containerPort) {
+    private void lookupServiceByNameAndContainerPort(final String dockerHost,
+                                                     final int dockerPort,
+                                                     final String name,
+                                                     final int containerPort,
+                                                     final Promise<List<URI>> promise) {
 
-
-        logger.debug("Docker lookupServiceByNameAndContainerPort  {} {}", name, containerPort);
-        this.queryDocker(result,
-                json -> Optional.of(json)
-                        .map(o -> o.getString("Image"))
-                        .map(image -> image.split("/"))
-                        .map(array -> array.length > 1 ? array[1] : array[0])
-                        .map(image -> image.split(":"))
-                        .map(array -> array[0])
-                        .get().equals(name),
+        logger.debug("Docker lookupServiceByNameAndContainerPort {} {}", name, containerPort);
+        this.queryDocker(
+                dockerHost,
+                dockerPort,
+                promise,
+                json -> (json.getJsonArray("Names").getString(0)).equals(name),
                 json -> {
                     final JsonObject jsonObject = (JsonObject) json;
                     final JsonArray ports = jsonObject.getJsonArray("Ports");
                     for (int i = 0; i < ports.size(); i++) {
                         final JsonObject port = ports.getJsonObject(i);
                         final int foundContainerPort = port.getInteger("PrivatePort");
-
                         if (containerPort == foundContainerPort) {
-
                             logger.debug("Docker FOUND {} {} {}", name, containerPort, port.getInteger("PublicPort"));
-                            return new ServiceDefinition(dockerHost, port.getInteger("PublicPort"));
+                            return URI.create(RESULT_SCHEME + "://" + dockerHost + ":" + port.getInteger("PublicPort"));
                         }
                     }
 
                     logger.error("Docker NOT FOUND {} {}", name, containerPort);
-                    throw new IllegalStateException("Private port (container port) not found: " + containerPort);
+                    return null;
                 });
     }
 
-    private void queryDocker(final Callback<ServiceDefinition> result,
+    private void queryDocker(final String dockerHost,
+                             final int dockerPort,
+                             final Promise<List<URI>> promise,
                              final Predicate<JsonObject> filter,
-                             final Function<Object, ServiceDefinition> transformResultToServiceDefinition) {
+                             final Function<Object, URI> transformResultToServiceDefinition) {
 
+        vertx.createHttpClient()
+                .request(HttpMethod.GET, dockerPort, dockerHost, "/containers/json")
+                .exceptionHandler(promise::reject)
+                .handler(httpClientResponse -> {
 
-        final HttpClient httpClient = vertx.createHttpClient();
-        final HttpClientRequest request = httpClient.request(HttpMethod.GET, dockerPort,
-                dockerHost, "/containers/json");
+                    httpClientResponse.exceptionHandler(promise::reject);
 
+                    if (httpClientResponse.statusCode() != 200) {
+                        promise.reject(new IllegalStateException(String.format("docker query returned status %d %s",
+                                httpClientResponse.statusCode(), httpClientResponse.statusMessage())));
+                        return;
+                    }
 
-        if (logger.isInfoEnabled()) {
-            final String message = "curl -H \"Content-type: application/json\" -H \"Accept: application/json\" " +
-                    "http://" + dockerHost + ":" + dockerPort + "/containers/json";
-            logger.info("About to make REST call  \n{}\n", message);
-        }
-
-        request.exceptionHandler(throwable -> {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Unable to query docker {} {}", dockerHost, dockerPort);
-            }
-            result.onError(throwable);
-        });
-
-        request.handler(httpClientResponse -> {
-
-            if (httpClientResponse.statusCode() >= 200 && httpClientResponse.statusCode() < 300) {
-                httpClientResponse.bodyHandler(buffer -> {
-                    final JsonArray jsonArray = buffer.toJsonArray();
-                    handleResponseBodyFromDocker(result, filter,
-                            transformResultToServiceDefinition, jsonArray);
-                });
-            } else {
-                result.onError(new IllegalStateException(String.format("Unable to find %d %s", httpClientResponse.statusCode(),
-                        httpClientResponse.statusMessage())));
-            }
-        });
-
-        request.end(); //Send the request
-
-
-    }
-
-    private void handleResponseBodyFromDocker(final Callback<ServiceDefinition> result,
-                                              final Predicate<JsonObject> filter,
-                                              final Function<Object, ServiceDefinition> transformResultToServiceDefinition,
-                                              final JsonArray jsonArray) {
-        final Optional<ServiceDefinition> serviceDefinition = jsonArray
-                .stream()
-                .filter(o -> o instanceof JsonObject)
-                .map(o -> (JsonObject) o)
-                .filter(filter::test)
-                .map(transformResultToServiceDefinition::apply)
-                .findAny();
-        if (serviceDefinition.isPresent()) {
-            result.returnThis(serviceDefinition.get());
-        } else {
-            result.onError(new IllegalStateException(String.format("Could not find service by predicate %s", filter)));
-        }
+                    httpClientResponse.bodyHandler(buffer -> promise.accept(buffer.toJsonArray()
+                            .stream()
+                            .filter(o -> o instanceof JsonObject)
+                            .map(o -> (JsonObject) o)
+                            .filter(filter)
+                            .map(transformResultToServiceDefinition)
+                            .filter(o -> o != null)
+                            .collect(Collectors.toList())
+                    ));
+                })
+                .end(); //Send the request
     }
 
 }

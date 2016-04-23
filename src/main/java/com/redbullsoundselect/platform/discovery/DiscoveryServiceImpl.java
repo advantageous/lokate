@@ -1,129 +1,114 @@
 package com.redbullsoundselect.platform.discovery;
 
-import io.advantageous.qbit.reactive.Callback;
+import io.advantageous.reakt.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.URI;
 import java.util.*;
-import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+
+import static java.util.ServiceLoader.load;
 
 /**
- * Created by gcc on 2/5/16.
+ * docker:http://localhost:3500/
+ * dns://localhost:8600/
+ * marathon:http://marathon.staging.rbmhops.net:8080/
+ * aws:http://ec2.us-west-2.amazonaws.com/?env=staging
+ * <p>
+ * discovery:docker:///impressions-service?containerPort=8080
+ * discovery:docker:http://localhost:3500/impressions-service?containerPort=8080
+ * <p>
+ * discovery:dns:A:///admin.rbss-impressions-service-staging.service.consul?port=9090
+ * discovery:dns:A://localhost:8600/admin.rbss-impressions-service-staging.service.consul?port=8080
+ * <p>
+ * discovery:dns:SRV:///admin.rbss-impressions-service-staging.service.consul
+ * discovery:dns:SRV://localhost:8600/admin.rbss-impressions-service-staging.service.consul
+ * <p>
+ * discovery:consul:///impressions-service?name=eventbus&staging
+ * discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbus&staging
+ * <p>
+ * discovery:echo:http://localhost:8080/myservice
  *
- * @author rick and geoff
+ * @author Geoff Chandler
+ * @author Rick Hightower
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class DiscoveryServiceImpl implements DiscoveryService {
 
-    private final List<DiscoveryService> discoveryServices;
-
+    private final Map<String, DiscoveryService> discoveryServices = new HashMap<>();
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    public DiscoveryServiceImpl(final DiscoveryService... discoveryServices) {
-        this.discoveryServices = Arrays.asList(discoveryServices);
-        if (logger.isDebugEnabled()) {
-            this.discoveryServices.forEach(discoveryService ->
-                    logger.debug("Using Discovery Service {}", discoveryService.getClass().getName()));
-        }
-    }
+    /**
+     * Create a DiscoveryService with a list of service endpoint configurations.  These configurations will be passed to
+     * the factories that are registered for their schemes.
+     *
+     * @param endpointConfigurations URIs that configure the various discovery service factories
+     */
+    public DiscoveryServiceImpl(final URI... endpointConfigurations) {
 
+        /*
+        First we load all the factories listed in META-INF services into map
+         */
+        final Map<String, DiscoveryServiceFactory> factoryMap = new HashMap<>();
+        load(DiscoveryServiceFactory.class).forEach((factory -> factoryMap.put(factory.getScheme(), factory)));
+        load(DiscoveryServiceFactory.class, DiscoveryServiceImpl.class.getClassLoader()).forEach(factory ->
+                factoryMap.put(factory.getScheme(), factory)
+        );
 
-    private Optional<DiscoveryService> getNextProvider(final Iterator<DiscoveryService> iterator) {
-        return !iterator.hasNext() ? Optional.empty() : Optional.of(iterator.next());
-    }
+        /*
+        Now we create a configuration map that groups the URIs with the same scheme
+         */
+        final Map<String, List<URI>> configMap = new HashMap<>();
+        Arrays.asList(endpointConfigurations).forEach(uri ->
+                configMap.computeIfAbsent(uri.getScheme(), scheme -> new ArrayList<>()).add(uri)
+        );
 
-    private void queryProviderByName(final Callback<ServiceDefinition> result,
-                                     final String name,
-                                     final Iterator<DiscoveryService> iterator) {
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("queryProviderByName name {} ", name);
-        }
-
-        try {
-            queryDiscoveryProviders(result, name, iterator,
-                    (handler, discoveryService) ->
-                            discoveryService.lookupServiceByName(handler, name),
-                    () -> queryProviderByName(result, name, iterator));
-        } catch (Exception ex) {
-            logger.error("Unable to query", ex);
-        }
-    }
-
-    private void queryProviderByNameAndContainerPort(final Callback<ServiceDefinition> result,
-                                                     final String name,
-                                                     final int containerPort,
-                                                     final Iterator<DiscoveryService> iterator) {
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("queryProviderByNameAndContainerPort name {}, port {} ", name, containerPort);
-        }
-
-
-        try {
-            queryDiscoveryProviders(result, name, iterator,
-                    (handler, discoveryService) ->
-                            discoveryService.lookupServiceByNameAndContainerPort(handler, name, containerPort),
-                    () -> queryProviderByNameAndContainerPort(result, name, containerPort, iterator));
-        } catch (Exception ex) {
-            logger.error("Unable to query", ex);
-        }
-    }
-
-    /** TODO */
-    private void queryDiscoveryProviders(final Callback<ServiceDefinition> result,
-                                         final String name,
-                                         final Iterator<DiscoveryService> iterator,
-                                         final LookupCall lookupCall,
-                                         final Runnable repeat) {
-
-        getNextProvider(iterator).ifPresent(discoveryProvider ->
-
-
-                lookupCall.lookup(new Callback<ServiceDefinition>() {
-                    @Override
-                    public void accept(final ServiceDefinition serviceDefinition) {
-                        result.returnThis(serviceDefinition);
-                    }
-
-                    @Override
-                    public void onError(final Throwable cause) {
-
-                        if (!iterator.hasNext()) {
-                            logger.error("Unable to find service {} from any provider ", name);
-                            logger.error("Unable to find service from any provider", cause);
-                            result.onError(new IllegalStateException("Unable to find service from any provider for name "
-                                    + name, cause));
-                        }
-                        logger.info("Unable to find service {} from provider {}",
-                                name, discoveryProvider.getClass().getSimpleName());
-
-                        repeat.run();
-                    }
-
-                    @Override
-                    public void onTimeout() {
-                        onError(new TimeoutException("Call to lookup " + name + " timed out"));
-                    }
-                }, discoveryProvider)
+        /*
+        Finally we create each discovery service using the grouped configuration and put them in the registry map.
+         */
+        configMap.entrySet().forEach((entry) -> this.registerService(entry.getKey(),
+                factoryMap.computeIfAbsent(entry.getKey(), (scheme) -> {
+                    throw new IllegalArgumentException("no factory for scheme " + scheme);
+                }).create(entry.getValue()))
         );
     }
 
-
+    /**
+     * Lookup a service with a URI Query.
+     *
+     * @param query the URI that defines your query
+     * @return a service definition that matches your query
+     */
     @Override
-    public void lookupServiceByName(final Callback<ServiceDefinition> result,
-                                    final String name) {
-
-        queryProviderByName(result, name, discoveryServices.iterator());
+    public Promise<List<URI>> lookupService(final URI query) {
+        logger.debug("looking up service for query: {}", query);
+        if (!query.getScheme().equals(QUERY_SCHEME))
+            throw new IllegalArgumentException("discovery uris must begin with \"" + QUERY_SCHEME + ":\"");
+        return this.discoveryServices.computeIfAbsent(URI.create(query.getSchemeSpecificPart()).getScheme(), (key) -> {
+            throw new IllegalArgumentException("discovery scheme not registered: " + QUERY_SCHEME + ":" + key);
+        }).lookupService(URI.create(query.getSchemeSpecificPart()));
     }
 
-    @Override
-    public void lookupServiceByNameAndContainerPort(final Callback<ServiceDefinition> result,
-                                                    final String name,
-                                                    final int port) {
-
-        queryProviderByNameAndContainerPort(result, name, port, discoveryServices.iterator());
+    /**
+     * Register a service for a scheme
+     *
+     * @param scheme  the discovery scheme for queries
+     * @param service the service to register
+     */
+    void registerService(final String scheme, final DiscoveryService service) {
+        Objects.requireNonNull(scheme, "scheme must not be null");
+        Objects.requireNonNull(service, "service must be set.");
+        logger.info("registering {} to handle discovery for the schema {}", service.getClass().getSimpleName(), scheme);
+        this.discoveryServices.put(scheme, service);
     }
 
-    private interface LookupCall {
-        void lookup(Callback<ServiceDefinition> handler, DiscoveryService discoveryService);
+    /**
+     * Get a list of the registered services
+     *
+     * @return the list
+     */
+    List<Class> getRegisteredServiceClasses() {
+        return this.discoveryServices.values().stream().map(DiscoveryService::getClass).collect(Collectors.toList());
     }
 }
