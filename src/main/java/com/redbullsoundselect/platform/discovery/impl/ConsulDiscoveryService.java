@@ -28,6 +28,8 @@ class ConsulDiscoveryService implements DiscoveryService {
     private final String consulHost;
 
     ConsulDiscoveryService(final URI config) {
+        if (config == null)
+            throw new IllegalArgumentException("you must specify a configuration URI for the consul discovery service");
         this.vertx = Vertx.vertx();
         final URI consulConfig = URI.create(config.getSchemeSpecificPart());
         this.consulPort = consulConfig.getPort();
@@ -61,8 +63,8 @@ class ConsulDiscoveryService implements DiscoveryService {
                                             (item) -> item.getJsonArray("ServiceTags").contains(queryMap.get("tag")) :
                                             (item) -> true)
                                     .map(item -> URI.create(RESULT_SCHEME + "://" +
-                                            item.getString("ServiceAddress") + ":" +
-                                            item.getString("ServicePort") + "?tags=" +
+                                            item.getString("Address") + ":" +
+                                            item.getInteger("ServicePort") + "?tags=" +
                                             item.getJsonArray("ServiceTags").toString()))
                                     .filter(o -> o != null)
                                     .collect(Collectors.toList())

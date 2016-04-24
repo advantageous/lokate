@@ -38,7 +38,7 @@ class DnsDiscoveryService implements DiscoveryService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     DnsDiscoveryService(final URI... configs) {
-        if (configs.length == 0)
+        if (configs == null || configs.length == 0)
             throw new IllegalArgumentException("you must specify a configuration URI for the dns discovery service");
         this.vertx = Vertx.vertx();
         this.dnsHosts = Arrays.stream(configs).map(uri ->

@@ -34,6 +34,8 @@ class DockerDiscoveryService implements DiscoveryService {
     private final String defaultDockerHost;
 
     DockerDiscoveryService(final URI config) {
+        if (config == null)
+            throw new IllegalArgumentException("you must specify a configuration URI for the docker discovery service");
         final URI dockerConfig = URI.create(config.getSchemeSpecificPart());
         this.vertx = Vertx.vertx();
         this.defaultDockerPort = dockerConfig.getPort();

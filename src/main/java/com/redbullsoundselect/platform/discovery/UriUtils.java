@@ -10,6 +10,7 @@ import java.util.Map;
 public class UriUtils {
 
     private UriUtils() {
+        throw new IllegalStateException("this class should not be instantiated.");
     }
 
     public static Map<String, String> splitQuery(String query) {

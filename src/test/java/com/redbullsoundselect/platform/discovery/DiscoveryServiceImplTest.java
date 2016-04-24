@@ -27,10 +27,11 @@ public class DiscoveryServiceImplTest {
     public void testConstructionWithServiceLoader() throws Exception {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl(
                 URI.create("dns://ns-620.awsdns-13.net:53"),
-                URI.create("docker:http://192.168.99.100:2375")
+                URI.create("docker:http://192.168.99.100:2375"),
+                URI.create("consul:http://192.168.99.100:8500")
         );
         Assert.assertNotNull(discoveryService);
-        Assert.assertEquals(2, discoveryService.getRegisteredServiceClasses().size());
+        Assert.assertEquals(3, discoveryService.getRegisteredServiceClasses().size());
     }
 
     @Test(expected = IllegalArgumentException.class)

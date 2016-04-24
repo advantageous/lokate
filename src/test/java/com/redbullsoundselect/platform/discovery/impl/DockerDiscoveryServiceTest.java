@@ -20,6 +20,11 @@ public class DockerDiscoveryServiceTest {
         Assert.assertNotNull(service);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructNoConfig() throws Exception {
+        new DockerDiscoveryService(null);
+    }
+
     @Test(expected = RejectedPromiseException.class)
     public void testWithNullQuery() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
