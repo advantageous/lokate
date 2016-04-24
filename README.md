@@ -47,7 +47,14 @@ DNS SVR Record Query.
 discovery:dns:SRV:///admin.rbss-impressions-service-staging.service.consul
 discovery:dns:SRV://localhost:8600/admin.rbss-impressions-service-staging.service.consul
 ```
+
+Consul Query
+```
 discovery:consul:///impressions-service?name=eventbus&staging
 discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbus&staging
+```
 
+Echo Query.
+```
 discovery:echo:http://localhost:8080/myservice
+```
