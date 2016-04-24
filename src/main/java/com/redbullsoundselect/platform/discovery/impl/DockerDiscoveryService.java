@@ -33,15 +33,11 @@ class DockerDiscoveryService implements DiscoveryService {
     private final int defaultDockerPort;
     private final String defaultDockerHost;
 
-    DockerDiscoveryService(final URI... configs) {
-        if (configs.length > 1)
-            throw new UnsupportedOperationException("the docker discovery service only supports one configuration.");
-        if (configs.length == 0)
-            throw new IllegalArgumentException("you must specify a configuration URI for the docker discovery service");
-        final URI config = URI.create(configs[0].getSchemeSpecificPart());
+    DockerDiscoveryService(final URI config) {
+        final URI dockerConfig = URI.create(config.getSchemeSpecificPart());
         this.vertx = Vertx.vertx();
-        this.defaultDockerPort = config.getPort();
-        this.defaultDockerHost = config.getHost();
+        this.defaultDockerPort = dockerConfig.getPort();
+        this.defaultDockerHost = dockerConfig.getHost();
     }
 
     @Override
@@ -56,14 +52,14 @@ class DockerDiscoveryService implements DiscoveryService {
                 return;
             }
 
-            final String dockerHost = query.getHost() != null ? query.getHost() : defaultDockerHost;
+            final String dockerHost = query.getHost() != null ? query.getHost() : this.defaultDockerHost;
             final Map<String, String> queryMap = UriUtils.splitQuery(query.getQuery());
             final int containerPort = queryMap.containsKey(CONTAINER_PORT_QUERY_KEY) ?
                     Integer.parseInt(queryMap.get(CONTAINER_PORT_QUERY_KEY)) : -1;
 
-            vertx.createHttpClient()
+            this.vertx.createHttpClient()
                     .request(HttpMethod.GET, query.getPort() != -1 ? query.getPort() :
-                            defaultDockerPort, dockerHost, "/containers/json")
+                            this.defaultDockerPort, dockerHost, "/containers/json")
                     .exceptionHandler(promise::reject)
                     .handler(httpClientResponse -> httpClientResponse
                             .exceptionHandler(promise::reject)
