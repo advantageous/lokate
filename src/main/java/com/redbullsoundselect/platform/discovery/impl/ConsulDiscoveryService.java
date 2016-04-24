@@ -30,6 +30,8 @@ class ConsulDiscoveryService implements DiscoveryService {
     ConsulDiscoveryService(final URI config) {
         if (config == null)
             throw new IllegalArgumentException("you must specify a configuration URI for the consul discovery service");
+        if (!SCHEME.equals(config.getScheme()))
+            throw new IllegalArgumentException("scheme for consul service config must be " + SCHEME);
         this.vertx = Vertx.vertx();
         final URI consulConfig = URI.create(config.getSchemeSpecificPart());
         this.consulPort = consulConfig.getPort();

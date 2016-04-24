@@ -41,8 +41,12 @@ class DnsDiscoveryService implements DiscoveryService {
         if (configs == null || configs.length == 0)
             throw new IllegalArgumentException("you must specify a configuration URI for the dns discovery service");
         this.vertx = Vertx.vertx();
-        this.dnsHosts = Arrays.stream(configs).map(uri ->
-                URI.create(uri.getSchemeSpecificPart())).collect(Collectors.toList());
+        this.dnsHosts = Arrays.stream(configs)
+                .peek(uri -> {
+                    if (!SCHEME.equals(uri.getScheme()))
+                        throw new IllegalArgumentException("scheme for docker service config must be " + SCHEME);
+                })
+                .map(uri -> URI.create(uri.getSchemeSpecificPart())).collect(Collectors.toList());
     }
 
     @Override

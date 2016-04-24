@@ -74,8 +74,13 @@ public class ConsulDiscoveryServiceTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConstructNoConfig() throws Exception {
+    public void testConstructWithNoConfig() throws Exception {
         new ConsulDiscoveryService(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructWithWrongConfig() throws Exception {
+        new ConsulDiscoveryService(URI.create("bogus://foo"));
     }
 
     @Test(expected = RejectedPromiseException.class)

@@ -21,8 +21,13 @@ public class DockerDiscoveryServiceTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConstructNoConfig() throws Exception {
+    public void testConstructWithNoConfig() throws Exception {
         new DockerDiscoveryService(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructWithWrongConfig() throws Exception {
+        new DockerDiscoveryService(URI.create("bogus://foo"));
     }
 
     @Test(expected = RejectedPromiseException.class)
