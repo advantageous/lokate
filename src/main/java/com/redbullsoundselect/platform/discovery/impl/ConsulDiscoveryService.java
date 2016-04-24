@@ -65,7 +65,11 @@ class ConsulDiscoveryService implements DiscoveryService {
                                     .map(item -> URI.create(RESULT_SCHEME + "://" +
                                             item.getString("Address") + ":" +
                                             item.getInteger("ServicePort") + "?tags=" +
-                                            item.getJsonArray("ServiceTags").toString()))
+                                            String.join(",", item.getJsonArray("ServiceTags")
+                                                    .stream()
+                                                    .map(Object::toString)
+                                                    .collect(Collectors.toList()))
+                                    ))
                                     .filter(o -> o != null)
                                     .collect(Collectors.toList())
                             )))
