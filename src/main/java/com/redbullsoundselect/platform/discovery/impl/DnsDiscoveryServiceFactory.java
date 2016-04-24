@@ -6,7 +6,7 @@ import com.redbullsoundselect.platform.discovery.DiscoveryServiceFactory;
 import java.net.URI;
 import java.util.List;
 
-class DnsDiscoveryServiceFactory implements DiscoveryServiceFactory {
+public class DnsDiscoveryServiceFactory implements DiscoveryServiceFactory {
 
     @Override
     public String getScheme() {
