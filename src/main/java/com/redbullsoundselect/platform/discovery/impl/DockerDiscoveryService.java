@@ -89,9 +89,8 @@ class DockerDiscoveryService implements DiscoveryService {
                                     .peek(foundPort -> this.logger.debug("found port: {}", foundPort))
                                     .map(foundPort -> Optional.ofNullable(foundPort.getInteger("PublicPort")))
                                     .map(optional -> URI.create(RESULT_SCHEME + "://" + dockerHost +
-                                            (optional.isPresent() ? ":" + optional.get() : "") + "/"
-                                    ))
-                                    .peek(uri -> this.logger.debug("found service in docker: {}", uri.toString()))
+                                            (optional.isPresent() ? ":" + optional.get() : "") + "/"))
+                                    .peek(uri -> this.logger.debug("found service in docker: {}", uri))
                                     .collect(Collectors.toList())
                             )))
                     .end(); //Send the request

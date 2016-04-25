@@ -14,14 +14,9 @@ DNS
 dns://localhost:8600/
 ```
 
-Marathon
+Consul
 ```
-marathon:http://marathon.staging.rbmhops.net:8080/
-```
-
-AWS
-```
-aws:http://ec2.us-west-2.amazonaws.com/?env=staging
+consul:http://192.168.99.100:8500
 ```
 ## Query URIs
 
@@ -52,9 +47,4 @@ Consul Query
 ```
 discovery:consul:///impressions-service?name=eventbus&staging
 discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbus&staging
-```
-
-Echo Query.
-```
-discovery:echo:http://localhost:8080/myservice
 ```
