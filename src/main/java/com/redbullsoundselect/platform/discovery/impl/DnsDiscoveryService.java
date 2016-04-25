@@ -26,14 +26,13 @@ import static io.advantageous.reakt.vertx.ReaktVertx.convertPromise;
 class DnsDiscoveryService implements DiscoveryService {
 
     static final String SCHEME = "dns";
-    private static final String PORT_QUERY_KEY = "port";
 
+    private static final String PORT_QUERY_KEY = "port";
     private static final String A_SCHEME = "A";
     private static final String SRV_SCHEME = "SRV";
 
     private final Vertx vertx;
     private final List<URI> dnsHosts;
-
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     DnsDiscoveryService(final URI... configs) {

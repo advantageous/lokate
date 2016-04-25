@@ -31,8 +31,10 @@ import static io.advantageous.reakt.promise.Promises.invokablePromise;
 class DockerDiscoveryService implements DiscoveryService {
 
     static final String SCHEME = "docker";
+
     private static final String CONTAINER_PORT_QUERY_KEY = "containerPort";
     private static final String REQUIRE_PUBLIC_QUERY_KEY = "requirePublicPort";
+
     private final Vertx vertx;
     private final int defaultDockerPort;
     private final String defaultDockerHost;

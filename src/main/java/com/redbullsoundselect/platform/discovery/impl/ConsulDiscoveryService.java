@@ -72,12 +72,13 @@ class ConsulDiscoveryService implements DiscoveryService {
                                             String.join(",", item.getJsonArray("ServiceTags")
                                                     .stream()
                                                     .map(Object::toString)
-                                                    .collect(Collectors.toList()))
+                                                    .collect(Collectors.toList())
+                                            )
                                     ))
                                     .filter(o -> o != null)
                                     .peek(uri -> this.logger.debug("found service in consul: {}", uri.toString()))
-                                    .collect(Collectors.toList())
-                            )))
+                                    .collect(Collectors.toList()))
+                            ))
                     .end();
         });
     }

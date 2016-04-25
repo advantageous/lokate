@@ -15,7 +15,7 @@ class UriUtils {
         final Map<String, String> queryPairs = new LinkedHashMap<>();
         final String[] pairs = query.split("&|;");
         for (final String pair : pairs) {
-            final int idx = pair.indexOf("=");
+            final int idx = pair.indexOf('=');
             queryPairs.put(pair.substring(0, idx), pair.substring(idx + 1));
         }
         return queryPairs;
