@@ -63,9 +63,9 @@ class ConsulDiscoveryService implements DiscoveryService {
                                     .stream()
                                     .filter(o -> o instanceof JsonObject)
                                     .map(o -> (JsonObject) o)
-                                    .filter(queryMap.containsKey("tag") ?
-                                            (item) -> item.getJsonArray("ServiceTags").contains(queryMap.get("tag")) :
-                                            (item) -> true)
+                                    .filter(queryMap.containsKey("tag")
+                                            ? item -> item.getJsonArray("ServiceTags").contains(queryMap.get("tag"))
+                                            : item -> true)
                                     .map(item -> URI.create(RESULT_SCHEME + "://" +
                                             item.getString("Address") + ":" +
                                             item.getInteger("ServicePort") + "?tags=" +
