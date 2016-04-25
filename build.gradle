@@ -45,6 +45,7 @@ testDockerContainers {
         containerName "consul"
         image "progrium/consul"
         runArgs "-server -bootstrap -dc docker -ui-dir /ui"
+	waitAfterRun 3	
     }
 }
 
