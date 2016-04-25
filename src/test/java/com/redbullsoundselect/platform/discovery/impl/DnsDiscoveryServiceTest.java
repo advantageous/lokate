@@ -12,10 +12,21 @@ import java.util.List;
 
 public class DnsDiscoveryServiceTest {
 
-    private static final URI[] TEST_CONFIGS = new URI[]{
-            URI.create("dns://ns-620.awsdns-13.net:53"),
-            URI.create("dns://192.168.99.100:8600")
-    };
+    private static final String CONSUL_HOST;
+    private static final URI[] TEST_CONFIGS;
+
+    static {
+        final String dockerHost = System.getenv("DOCKER_HOST");
+        if (dockerHost != null) {
+            CONSUL_HOST = dockerHost.split(":")[0];
+        } else {
+            CONSUL_HOST = "192.168.99.100";
+        }
+        TEST_CONFIGS = new URI[]{
+                URI.create("dns://ns-620.awsdns-13.net:53"),
+                URI.create("dns://" + CONSUL_HOST + ":8600")
+        };
+    }
 
     @Test
     public void testConstruct() throws Exception {

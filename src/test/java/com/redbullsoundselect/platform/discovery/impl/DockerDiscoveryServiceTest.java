@@ -12,7 +12,15 @@ import java.util.List;
 
 public class DockerDiscoveryServiceTest {
 
-    private static final URI TEST_CONFIG = URI.create("docker:http://192.168.99.100:2375");
+    private static final URI TEST_CONFIG;
+
+    static {
+        String dockerHost = System.getenv("DOCKER_HOST");
+        if (dockerHost == null) {
+            dockerHost = "192.168.99.100:2375";
+        }
+        TEST_CONFIG = URI.create("docker:http://" + dockerHost);
+    }
 
     @Test
     public void testConstruct() throws Exception {
