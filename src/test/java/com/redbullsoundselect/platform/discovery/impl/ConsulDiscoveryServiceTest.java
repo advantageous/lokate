@@ -12,6 +12,8 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Collections;
@@ -23,6 +25,7 @@ public class ConsulDiscoveryServiceTest {
     private static final String CONSUL_HOST;
     private static final int CONSUL_PORT;
     private static final URI TEST_CONFIG;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConsulDiscoveryServiceTest.class);
 
     static {
         final String dockerHost = System.getenv("DOCKER_HOST");
@@ -53,6 +56,7 @@ public class ConsulDiscoveryServiceTest {
         JsonObject original = requestPromise.get().orElseGet(() -> {
             throw new RuntimeException();
         });
+        LOGGER.debug("original object: {}", original);
 
         JsonObject updated = new JsonObject();
         updated.put("Node", original.getString("Node"));
@@ -66,6 +70,7 @@ public class ConsulDiscoveryServiceTest {
         serviceObject.put("Tags", new JsonArray(Collections.singletonList(tag)));
 
         updated.put("Service", serviceObject);
+        LOGGER.debug("new object: {}", updated);
         Buffer buffer = Buffer.buffer(updated.toString());
 
         Promise<HttpClientResponse> updatePromise = Promises.blockingPromise();

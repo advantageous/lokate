@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.advantageous.reakt.promise.Promises.invokablePromise;
+import static java.lang.Boolean.parseBoolean;
 
 /**
  * Uses Docker REST API to find services by name.
@@ -64,10 +65,8 @@ class DockerDiscoveryService implements DiscoveryService {
 
             final String dockerHost = query.getHost() != null ? query.getHost() : this.defaultDockerHost;
             final Map<String, String> queryMap = UriUtils.splitQuery(query.getQuery());
-            final int findPort = queryMap.containsKey(CONTAINER_PORT_QUERY_KEY) ?
-                    Integer.parseInt(queryMap.get(CONTAINER_PORT_QUERY_KEY)) : -1;
-            final boolean requirePublicPort = !queryMap.containsKey(REQUIRE_PUBLIC_QUERY_KEY)
-                    || Boolean.parseBoolean(queryMap.get(REQUIRE_PUBLIC_QUERY_KEY));
+            final boolean requirePublicPort = parseBoolean(queryMap.getOrDefault(REQUIRE_PUBLIC_QUERY_KEY, "true"));
+            final int findPort = Integer.parseInt(queryMap.getOrDefault(CONTAINER_PORT_QUERY_KEY, "-1"));
 
             this.vertx.createHttpClient()
                     .request(HttpMethod.GET, query.getPort() != -1 ? query.getPort() :
@@ -98,5 +97,4 @@ class DockerDiscoveryService implements DiscoveryService {
                     .end(); //Send the request
         });
     }
-
 }
