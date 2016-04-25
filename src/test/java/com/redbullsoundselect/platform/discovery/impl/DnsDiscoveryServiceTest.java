@@ -12,12 +12,14 @@ import java.util.List;
 
 public class DnsDiscoveryServiceTest {
 
-    private static final URI TEST_A_CONFIG = URI.create("dns://ns-620.awsdns-13.net:53");
-    private static final URI TEST_SRV_CONFIG = URI.create("dns://192.168.99.100:8600");
+    private static final URI[] TEST_CONFIGS = new URI[]{
+            URI.create("dns://ns-620.awsdns-13.net:53"),
+            URI.create("dns://192.168.99.100:8600")
+    };
 
     @Test
     public void testConstruct() throws Exception {
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         Assert.assertNotNull(service);
     }
 
@@ -34,7 +36,7 @@ public class DnsDiscoveryServiceTest {
     @Test(expected = RejectedPromiseException.class)
     public void testWithNullQuery() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService((URI) null).invokeWithPromise(promise);
         promise.get();
     }
@@ -42,7 +44,7 @@ public class DnsDiscoveryServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void testWithWrongScheme() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("bogus://bogus").invokeWithPromise(promise);
         promise.get();
     }
@@ -50,7 +52,7 @@ public class DnsDiscoveryServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void testWithWrongSubScheme() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:bogus://bogus").invokeWithPromise(promise);
         promise.get();
     }
@@ -58,7 +60,7 @@ public class DnsDiscoveryServiceTest {
     @Test
     public void testQueryA() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=100").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);
@@ -69,7 +71,7 @@ public class DnsDiscoveryServiceTest {
     @Test(expected = RejectedPromiseException.class)
     public void testQueryANoPort() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net").invokeWithPromise(promise);
         promise.get();
     }
@@ -77,7 +79,7 @@ public class DnsDiscoveryServiceTest {
     @Test(expected = RejectedPromiseException.class)
     public void testQueryABadPort() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=bogus").invokeWithPromise(promise);
         promise.get();
     }
@@ -85,7 +87,7 @@ public class DnsDiscoveryServiceTest {
     @Test
     public void testQueryAThatDoesNotExist() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:A:///potato.redbull.com?port=100").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);
@@ -95,7 +97,7 @@ public class DnsDiscoveryServiceTest {
     @Test
     public void testQueryAWithBadPrimary() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(URI.create("dns://0.0.0.0:53"), TEST_A_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(URI.create("dns://0.0.0.0:53"), TEST_CONFIGS[0]);
         service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=100").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);
@@ -106,7 +108,7 @@ public class DnsDiscoveryServiceTest {
     @Test
     public void testQuerySRV() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_SRV_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:SRV:///consul.service.consul").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);
@@ -118,7 +120,7 @@ public class DnsDiscoveryServiceTest {
     @Test
     public void testQuerySRVWithUnknownHost() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
-        DiscoveryService service = new DnsDiscoveryService(TEST_SRV_CONFIG);
+        DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
         service.lookupService("dns:SRV:///bogus.consul").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);

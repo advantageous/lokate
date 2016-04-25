@@ -4,7 +4,8 @@ import java.net.URI;
 import java.util.List;
 
 /**
- * Created by gcc on 4/20/16.
+ * Interface for discovery service factories.  These are used by the service loader to create discovery services
+ * from configuration URIs.
  */
 public interface DiscoveryServiceFactory {
 

@@ -1,19 +1,16 @@
-package com.redbullsoundselect.platform.discovery;
+package com.redbullsoundselect.platform.discovery.impl;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Created by gcc on 4/22/16.
- */
-public class UriUtils {
+class UriUtils {
 
     private UriUtils() {
         throw new IllegalStateException("this class should not be instantiated.");
     }
 
-    public static Map<String, String> splitQuery(String query) {
+    static Map<String, String> splitQuery(String query) {
         if (query == null) return Collections.emptyMap();
         final Map<String, String> queryPairs = new LinkedHashMap<>();
         final String[] pairs = query.split("&|;");

@@ -6,7 +6,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.Collections;
 
 public class DnsDiscoveryServiceFactoryTest {
@@ -22,6 +21,7 @@ public class DnsDiscoveryServiceFactoryTest {
         DiscoveryServiceFactory factory = new DnsDiscoveryServiceFactory();
         factory.create(Collections.emptyList());
     }
+
     @Test
     public void testCreate() {
         DiscoveryServiceFactory factory = new DnsDiscoveryServiceFactory();

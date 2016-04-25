@@ -1,4 +1,4 @@
-package com.redbullsoundselect.platform.discovery;
+package com.redbullsoundselect.platform.discovery.impl;
 
 import org.junit.Assert;
 import org.junit.Test;

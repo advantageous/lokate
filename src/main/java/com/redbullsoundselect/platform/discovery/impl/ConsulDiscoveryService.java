@@ -1,11 +1,12 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
-import com.redbullsoundselect.platform.discovery.UriUtils;
 import io.advantageous.reakt.promise.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.List;
@@ -26,6 +27,7 @@ class ConsulDiscoveryService implements DiscoveryService {
     private final Vertx vertx;
     private final int consulPort;
     private final String consulHost;
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     ConsulDiscoveryService(final URI config) {
         if (config == null)
@@ -52,8 +54,8 @@ class ConsulDiscoveryService implements DiscoveryService {
 
             final Map<String, String> queryMap = UriUtils.splitQuery(query.getQuery());
 
-            vertx.createHttpClient()
-                    .request(HttpMethod.GET, consulPort, consulHost, "/v1/catalog/service" + query.getPath())
+            this.vertx.createHttpClient()
+                    .request(HttpMethod.GET, this.consulPort, this.consulHost, "/v1/catalog/service" + query.getPath())
                     .exceptionHandler(promise::reject)
                     .handler(httpClientResponse -> httpClientResponse
                             .exceptionHandler(promise::reject)
@@ -73,6 +75,7 @@ class ConsulDiscoveryService implements DiscoveryService {
                                                     .collect(Collectors.toList()))
                                     ))
                                     .filter(o -> o != null)
+                                    .peek(uri -> this.logger.debug("found service in consul: {}", uri.toString()))
                                     .collect(Collectors.toList())
                             )))
                     .end();

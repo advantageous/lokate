@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.advantageous.reakt.promise.Promises.invokablePromise;
 import static java.util.ServiceLoader.load;
 
 /**
@@ -31,7 +32,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
     public DiscoveryServiceImpl(final URI... endpointConfigurations) {
 
         /*
-        First we load all the factories listed in META-INF services into map
+        Load all the factories listed in META-INF services into map
          */
         final Map<String, DiscoveryServiceFactory> factoryMap = new HashMap<>();
         load(DiscoveryServiceFactory.class).forEach((factory -> factoryMap.put(factory.getScheme(), factory)));
@@ -40,7 +41,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         );
 
         /*
-        Now we create a configuration map that groups the URIs with the same scheme
+        Create a configuration map that groups the URIs with the same scheme
          */
         final Map<String, List<URI>> configMap = new HashMap<>();
         Arrays.asList(endpointConfigurations).forEach(uri ->
@@ -48,13 +49,19 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         );
 
         /*
-        Finally we create each discovery service using the grouped configuration and put them in the registry map.
+        Create each discovery service using the grouped configuration and put them in the registry map.
          */
         configMap.entrySet().forEach((entry) -> this.registerService(entry.getKey(),
                 factoryMap.computeIfAbsent(entry.getKey(), (scheme) -> {
                     throw new IllegalArgumentException("no factory for scheme " + scheme);
                 }).create(entry.getValue()))
         );
+
+        /*
+        Create a basic echo service to return a literal of the requested URI
+         */
+        this.registerService("echo", query -> invokablePromise(promise ->
+                promise.resolve(Collections.singletonList(URI.create(query.getSchemeSpecificPart())))));
     }
 
     /**

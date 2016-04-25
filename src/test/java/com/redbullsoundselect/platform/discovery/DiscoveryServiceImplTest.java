@@ -1,11 +1,9 @@
 package com.redbullsoundselect.platform.discovery;
 
-import com.redbullsoundselect.platform.UnitTests;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.net.URI;
 import java.util.Collections;
@@ -13,14 +11,13 @@ import java.util.List;
 
 import static io.advantageous.reakt.promise.Promises.invokablePromise;
 
-@Category(UnitTests.class)
 public class DiscoveryServiceImplTest {
 
     @Test
     public void testEmptyConstruction() throws Exception {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         Assert.assertNotNull(discoveryService);
-        Assert.assertEquals(0, discoveryService.getRegisteredServiceClasses().size());
+        Assert.assertEquals(1, discoveryService.getRegisteredServiceClasses().size());
     }
 
     @Test
@@ -31,7 +28,7 @@ public class DiscoveryServiceImplTest {
                 URI.create("consul:http://192.168.99.100:8500")
         );
         Assert.assertNotNull(discoveryService);
-        Assert.assertEquals(3, discoveryService.getRegisteredServiceClasses().size());
+        Assert.assertEquals(4, discoveryService.getRegisteredServiceClasses().size());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -51,6 +48,19 @@ public class DiscoveryServiceImplTest {
         discoveryService.lookupService("discovery:test:///service").invokeWithPromise(promise);
         List<URI> results = promise.get();
         Assert.assertNotNull(results);
+        Assert.assertEquals(1, results.size());
+        Assert.assertEquals("location", results.get(0).getHost());
+    }
+
+    @Test
+    public void testEcho() {
+        DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
+        Promise<List<URI>> promise = Promises.blockingPromise();
+        discoveryService.lookupService("discovery:echo:///service").invokeWithPromise(promise);
+        List<URI> results = promise.get();
+        Assert.assertNotNull(results);
+        Assert.assertEquals(1, results.size());
+        Assert.assertEquals("/service", results.get(0).getPath());
     }
 
     @Test(expected = IllegalArgumentException.class)

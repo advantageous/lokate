@@ -42,7 +42,7 @@ public class DockerDiscoveryServiceTest {
     public void testQueryByName() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
-        service.lookupService("docker:///httpd").invokeWithPromise(promise);
+        service.lookupService("docker:///consul").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.size());
@@ -53,7 +53,7 @@ public class DockerDiscoveryServiceTest {
     public void testQueryWithBadScheme() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
-        service.lookupService("bogus://localhost/httpd").invokeWithPromise(promise);
+        service.lookupService("bogus://localhost/consul").invokeWithPromise(promise);
         promise.get();
     }
 
@@ -61,7 +61,17 @@ public class DockerDiscoveryServiceTest {
     public void testQueryByNameAndContainerPort() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
-        service.lookupService("docker:///httpd?containerPort=80").invokeWithPromise(promise);
+        service.lookupService("docker:///consul?containerPort=8500").invokeWithPromise(promise);
+        List<URI> result = promise.get();
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.get(0).getHost().isEmpty());
+    }
+
+    @Test
+    public void testQueryByNameAndContainerPortNoPublic() throws Exception {
+        Promise<List<URI>> promise = Promises.blockingPromise();
+        DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
+        service.lookupService("docker:///consul?containerPort=8300&requirePublicPort=false").invokeWithPromise(promise);
         List<URI> result = promise.get();
         Assert.assertNotNull(result);
         Assert.assertFalse(result.get(0).getHost().isEmpty());
@@ -71,7 +81,7 @@ public class DockerDiscoveryServiceTest {
     public void testQueryByNameAndContainerPortNotFound() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise();
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
-        service.lookupService("docker:///httpd?containerPort=8080").invokeWithPromise(promise);
+        service.lookupService("docker:///consul?containerPort=8080").invokeWithPromise(promise);
         Assert.assertEquals(Collections.emptyList(), promise.get());
     }
 

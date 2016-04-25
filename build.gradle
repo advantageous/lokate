@@ -4,7 +4,7 @@ buildscript {
         maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/plugins-release/' }
     }
     dependencies {
-        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.4.2'
+        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.4.3'
     }
 }
 
@@ -42,30 +42,14 @@ dependencies {
     testCompile "ch.qos.logback:logback-classic:1.1.3"
 }
 
-//TODO: Test categories should be moved out to test jar and tasks provided in platform
-test {
-    useJUnit {
-        includeCategories 'com.redbullsoundselect.platform.UnitTests'
-    }
-}
-task itest(type: Test) {
-    useJUnit {
-        includeCategories 'com.redbullsoundselect.platform.IntegrationTests'
-    }
-}
-itest.finalizedBy stopTestDocker
-itest.dependsOn startTestDocker
-
 testDockerContainers {
-    httpd {
-        publishAll true
-        containerName "httpd"
-        image "httpd"
-    }
     consul {
-        publishAll true
+        portMapping container: "8400", host: "8400"
+        portMapping container: "8500", host: "8500"
+        portMapping container: "8600", host: "53/udp"
         containerName "consul"
         image "progrium/consul"
+        runArgs "-server -bootstrap -dc docker -ui-dir /ui"
     }
 }
 

@@ -27,9 +27,9 @@ public class ConsulDiscoveryServiceTest {
     private static void addTagToService(String serviceName, String tag) {
         Promise<Optional<JsonObject>> requestPromise = Promises.blockingPromise();
         Vertx.vertx().createHttpClient().get(8500, CONSUL_HOST, "/v1/catalog/service/" + serviceName)
-                .exceptionHandler((e) -> Assert.fail())
+                .exceptionHandler(requestPromise::reject)
                 .handler(httpClientResponse -> httpClientResponse
-                        .exceptionHandler((e) -> Assert.fail())
+                        .exceptionHandler(requestPromise::reject)
                         .bodyHandler(buffer -> requestPromise.accept(buffer.toJsonArray()
                                 .stream()
                                 .filter(o -> o instanceof JsonObject)

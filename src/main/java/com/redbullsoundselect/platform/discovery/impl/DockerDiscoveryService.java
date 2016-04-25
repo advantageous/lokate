@@ -1,15 +1,17 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
-import com.redbullsoundselect.platform.discovery.UriUtils;
 import io.advantageous.reakt.promise.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static io.advantageous.reakt.promise.Promises.invokablePromise;
@@ -29,9 +31,11 @@ class DockerDiscoveryService implements DiscoveryService {
 
     static final String SCHEME = "docker";
     private static final String CONTAINER_PORT_QUERY_KEY = "containerPort";
+    private static final String REQUIRE_PUBLIC_QUERY_KEY = "requirePublicPort";
     private final Vertx vertx;
     private final int defaultDockerPort;
     private final String defaultDockerHost;
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     DockerDiscoveryService(final URI config) {
         if (config == null)
@@ -58,8 +62,10 @@ class DockerDiscoveryService implements DiscoveryService {
 
             final String dockerHost = query.getHost() != null ? query.getHost() : this.defaultDockerHost;
             final Map<String, String> queryMap = UriUtils.splitQuery(query.getQuery());
-            final int containerPort = queryMap.containsKey(CONTAINER_PORT_QUERY_KEY) ?
+            final int findPort = queryMap.containsKey(CONTAINER_PORT_QUERY_KEY) ?
                     Integer.parseInt(queryMap.get(CONTAINER_PORT_QUERY_KEY)) : -1;
+            final boolean requirePublicPort = !queryMap.containsKey(REQUIRE_PUBLIC_QUERY_KEY)
+                    || Boolean.parseBoolean(queryMap.get(REQUIRE_PUBLIC_QUERY_KEY));
 
             this.vertx.createHttpClient()
                     .request(HttpMethod.GET, query.getPort() != -1 ? query.getPort() :
@@ -72,16 +78,20 @@ class DockerDiscoveryService implements DiscoveryService {
                                     .filter(o -> o instanceof JsonObject)
                                     .map(o -> (JsonObject) o)
                                     .filter(json -> (json.getJsonArray("Names").getString(0)).equals(query.getPath()))
-                                    .map(json -> containerPort > 0 ? json.getJsonArray("Ports")
+                                    .map(json -> json.getJsonArray("Ports")
                                             .stream()
                                             .filter(o -> o instanceof JsonObject)
                                             .map(o -> (JsonObject) o)
-                                            .filter(portJson -> portJson.getInteger("PrivatePort") == containerPort)
-                                            .findAny().orElse(null) : json.getJsonArray("Ports").getJsonObject(0)
-                                    )
+                                            .filter(port -> !requirePublicPort || port.getInteger("PublicPort") != null)
+                                            .filter(port -> findPort <= 0 || port.getInteger("PrivatePort") == findPort)
+                                            .findAny().orElse(null))
                                     .filter(o -> o != null)
-                                    .map(foundPort -> URI.create(RESULT_SCHEME + "://" + dockerHost + ":" +
-                                            foundPort.getInteger("PublicPort")))
+                                    .peek(foundPort -> this.logger.debug("found port: {}", foundPort))
+                                    .map(foundPort -> Optional.ofNullable(foundPort.getInteger("PublicPort")))
+                                    .map(optional -> URI.create(RESULT_SCHEME + "://" + dockerHost +
+                                            (optional.isPresent() ? ":" + optional.get() : "") + "/"
+                                    ))
+                                    .peek(uri -> this.logger.debug("found service in docker: {}", uri.toString()))
                                     .collect(Collectors.toList())
                             )))
                     .end(); //Send the request

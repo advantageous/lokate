@@ -1,7 +1,6 @@
 package com.redbullsoundselect.platform.discovery.impl;
 
 import com.redbullsoundselect.platform.discovery.DiscoveryService;
-import com.redbullsoundselect.platform.discovery.UriUtils;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
 import io.vertx.core.Vertx;
@@ -99,22 +98,22 @@ class DnsDiscoveryService implements DiscoveryService {
                           final int port,
                           final Promise<List<URI>> promise) {
 
-        if (hostIndex >= dnsHosts.size()) {
+        if (hostIndex >= this.dnsHosts.size()) {
             promise.resolve(Collections.emptyList());
             return;
         }
 
-        final URI currentHost = dnsHosts.get(hostIndex);
+        final URI currentHost = this.dnsHosts.get(hostIndex);
 
-        vertx.createDnsClient(currentHost.getPort(), currentHost.getHost()).resolveA(serviceName,
+        this.vertx.createDnsClient(currentHost.getPort(), currentHost.getHost()).resolveA(serviceName,
                 convertPromise(Promises.<List<String>>promise()
                         .then(list -> promise.resolve(list.stream()
-                                .map(ipAddress -> RESULT_SCHEME + "://" + ipAddress + ":" + port + "/")
-                                .map(URI::create)
+                                .map(ipAddress -> URI.create(RESULT_SCHEME + "://" + ipAddress + ":" + port + "/"))
+                                .peek(uri -> this.logger.debug("found service in dns A: {}", uri.toString()))
                                 .collect(Collectors.toList())
                         ))
                         .catchError(error -> {
-                            logger.warn("dns lookup failed: ", error);
+                            this.logger.warn("dns lookup failed: ", error);
                             resolveA(hostIndex + 1, serviceName, port, promise);
                         })
                 )
@@ -135,10 +134,11 @@ class DnsDiscoveryService implements DiscoveryService {
                         .then(list -> promise.resolve(list.stream()
                                 .map(srv -> URI.create(RESULT_SCHEME + "://" + srv.target() + ":" + srv.port() + "/" +
                                         srv.name() + "?priority=" + srv.priority() + "&weight=" + srv.weight()))
+                                .peek(uri -> this.logger.debug("found service in dns SRV: {}", uri.toString()))
                                 .collect(Collectors.toList())
                         ))
                         .catchError(error -> {
-                            logger.warn("dns lookup failed: ", error);
+                            this.logger.warn("dns lookup failed: ", error);
                             resolveSRV(hostIndex + 1, serviceName, promise);
                         })
                 )
