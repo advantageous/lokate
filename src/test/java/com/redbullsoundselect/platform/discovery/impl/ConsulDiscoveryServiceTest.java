@@ -20,13 +20,26 @@ import java.util.Optional;
 
 public class ConsulDiscoveryServiceTest {
 
-    private static final String CONSUL_HOST = "192.168.99.100";
+    private static final String CONSUL_HOST;
+    private static final int CONSUL_PORT;
+    private static final URI TEST_CONFIG;
 
-    private static final URI TEST_CONFIG = URI.create("consul:http://" + CONSUL_HOST + ":8500");
+    static {
+        final String dockerHost = System.getenv("DOCKER_HOST");
+        if (dockerHost != null) {
+            final String[] parts = dockerHost.split(":");
+            CONSUL_HOST = parts[0];
+            CONSUL_PORT = Integer.parseInt(parts[1]);
+        } else {
+            CONSUL_HOST = "192.168.99.100";
+            CONSUL_PORT = 8500;
+        }
+        TEST_CONFIG = URI.create("consul:http://" + CONSUL_HOST + ":" + CONSUL_PORT);
+    }
 
     private static void addTagToService(String serviceName, String tag) {
         Promise<Optional<JsonObject>> requestPromise = Promises.blockingPromise();
-        Vertx.vertx().createHttpClient().get(8500, CONSUL_HOST, "/v1/catalog/service/" + serviceName)
+        Vertx.vertx().createHttpClient().get(CONSUL_PORT, CONSUL_HOST, "/v1/catalog/service/" + serviceName)
                 .exceptionHandler(requestPromise::reject)
                 .handler(httpClientResponse -> httpClientResponse
                         .exceptionHandler(requestPromise::reject)
@@ -56,7 +69,7 @@ public class ConsulDiscoveryServiceTest {
         Buffer buffer = Buffer.buffer(updated.toString());
 
         Promise<HttpClientResponse> updatePromise = Promises.blockingPromise();
-        Vertx.vertx().createHttpClient().put(8500, CONSUL_HOST, "/v1/catalog/register")
+        Vertx.vertx().createHttpClient().put(CONSUL_PORT, CONSUL_HOST, "/v1/catalog/register")
                 .exceptionHandler((e) -> Assert.fail())
                 .handler(updatePromise::accept)
                 .putHeader(HttpHeaders.CONTENT_LENGTH, buffer.length() + "")
