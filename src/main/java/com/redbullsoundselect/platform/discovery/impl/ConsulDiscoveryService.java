@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static io.advantageous.reakt.promise.Promises.invokablePromise;
@@ -30,8 +31,7 @@ class ConsulDiscoveryService implements DiscoveryService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     ConsulDiscoveryService(final URI config) {
-        if (config == null)
-            throw new IllegalArgumentException("you must specify a configuration URI for the consul discovery service");
+        Objects.requireNonNull(config, "you must specify a configuration URI for the consul discovery service");
         if (!SCHEME.equals(config.getScheme()))
             throw new IllegalArgumentException("scheme for consul service config must be " + SCHEME);
         this.vertx = Vertx.vertx();

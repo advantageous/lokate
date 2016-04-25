@@ -20,7 +20,7 @@ public class DockerDiscoveryServiceTest {
         Assert.assertNotNull(service);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testConstructWithNoConfig() throws Exception {
         new DockerDiscoveryService(null);
     }

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -38,8 +39,7 @@ class DockerDiscoveryService implements DiscoveryService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     DockerDiscoveryService(final URI config) {
-        if (config == null)
-            throw new IllegalArgumentException("you must specify a configuration URI for the docker discovery service");
+        Objects.requireNonNull(config, "you must specify a configuration URI for the docker discovery service");
         if (!SCHEME.equals(config.getScheme()))
             throw new IllegalArgumentException("scheme for docker service config must be " + SCHEME);
         final URI dockerConfig = URI.create(config.getSchemeSpecificPart());
