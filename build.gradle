@@ -45,7 +45,7 @@ testDockerContainers {
         containerName "consul"
         image "progrium/consul"
         runArgs "-server -bootstrap -dc docker -ui-dir /ui"
-	    waitAfterRun 3
+        waitAfterRun 3
     }
 }
 
@@ -58,7 +58,7 @@ idea {
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://oss.sonatype.org/content/repositories/releases/" }
+    maven { url = 'https://oss.sonatype.org/content/repositories/releases/' }
     maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/libs-release/' }
 }
 
