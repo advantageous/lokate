@@ -15,13 +15,16 @@ public class DockerDiscoveryServiceTest {
     private static final URI TEST_CONFIG;
 
     static {
-        String dockerHost = System.getenv("DOCKER_HOST");
-        if (dockerHost == null) {
-            dockerHost = "192.168.99.100:2375";
+        final String dockerHostEnv = System.getenv("DOCKER_HOST");
+
+        final String dockerHost;
+
+        if (dockerHostEnv == null) {
+            dockerHost = "192.168.99.100";
         } else {
-            dockerHost = dockerHost.substring(6);
+            dockerHost = URI.create(dockerHostEnv).getHost();
         }
-        TEST_CONFIG = URI.create("docker:http://" + dockerHost);
+        TEST_CONFIG = URI.create("docker:http://" + dockerHost + ":" + 2375);
         System.out.println("Test config: " + TEST_CONFIG);
     }
 
