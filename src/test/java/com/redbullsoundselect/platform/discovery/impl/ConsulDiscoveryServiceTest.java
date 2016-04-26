@@ -31,13 +31,14 @@ public class ConsulDiscoveryServiceTest {
         final String dockerHost = System.getenv("DOCKER_HOST");
         if (dockerHost != null) {
             final String[] parts = dockerHost.split(":");
-            CONSUL_HOST = parts[0];
-            CONSUL_PORT = Integer.parseInt(parts[1]);
+            CONSUL_HOST = parts[1].substring(2);
+            CONSUL_PORT = Integer.parseInt(parts[2]);
         } else {
             CONSUL_HOST = "192.168.99.100";
             CONSUL_PORT = 8500;
         }
         TEST_CONFIG = URI.create("consul:http://" + CONSUL_HOST + ":" + CONSUL_PORT);
+        System.out.println("Test config: " + TEST_CONFIG);
     }
 
     private static void addTagToService(String serviceName, String tag) {

@@ -18,8 +18,11 @@ public class DockerDiscoveryServiceTest {
         String dockerHost = System.getenv("DOCKER_HOST");
         if (dockerHost == null) {
             dockerHost = "192.168.99.100:2375";
+        } else {
+            dockerHost = dockerHost.substring(6);
         }
         TEST_CONFIG = URI.create("docker:http://" + dockerHost);
+        System.out.println("Test config: " + TEST_CONFIG);
     }
 
     @Test
