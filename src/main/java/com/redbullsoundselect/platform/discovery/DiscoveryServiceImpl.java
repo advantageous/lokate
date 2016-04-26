@@ -68,7 +68,7 @@ public class DiscoveryServiceImpl implements DiscoveryService {
      * Lookup a service with a URI Query.
      *
      * @param query the URI that defines your query
-     * @return a service definition that matches your query
+     * @return a Promise for a URI that matches your query
      */
     @Override
     public Promise<List<URI>> lookupService(final URI query) {
