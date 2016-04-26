@@ -23,7 +23,7 @@ public class DockerDiscoveryServiceTest {
         } else {
             dockerHost = URI.create(dockerHostEnv).getHost();
         }
-        
+
         TEST_CONFIG = URI.create("docker:http://" + dockerHost + ":" + 2375);
         System.out.println("Test config: " + TEST_CONFIG);
     }
