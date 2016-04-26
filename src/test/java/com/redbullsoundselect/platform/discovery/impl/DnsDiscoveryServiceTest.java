@@ -18,7 +18,7 @@ public class DnsDiscoveryServiceTest {
     static {
         final String dockerHost = System.getenv("DOCKER_HOST");
         if (dockerHost != null) {
-            CONSUL_HOST = dockerHost.split(":")[0].substring(2);
+            CONSUL_HOST = dockerHost.split(":")[1].substring(2);
         } else {
             CONSUL_HOST = "192.168.99.100";
         }
