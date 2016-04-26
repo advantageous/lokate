@@ -16,7 +16,6 @@ public class DockerDiscoveryServiceTest {
 
     static {
         final String dockerHostEnv = System.getenv("DOCKER_HOST");
-
         final String dockerHost;
 
         if (dockerHostEnv == null) {
@@ -24,6 +23,7 @@ public class DockerDiscoveryServiceTest {
         } else {
             dockerHost = URI.create(dockerHostEnv).getHost();
         }
+        
         TEST_CONFIG = URI.create("docker:http://" + dockerHost + ":" + 2375);
         System.out.println("Test config: " + TEST_CONFIG);
     }
