@@ -1,5 +1,6 @@
 package com.redbullsoundselect.platform.discovery;
 
+import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
 import org.junit.Assert;
@@ -40,9 +41,7 @@ public class DiscoveryServiceImplTest {
     public void testQuery() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         discoveryService.registerService("test", query -> invokablePromise(promise ->
-                promise.resolve(Collections.singletonList(
-                        URI.create(DiscoveryService.RESULT_SCHEME + "://location/"))
-                ))
+                promise.resolve(Collections.singletonList(URI.create(DiscoveryService.RESULT_SCHEME + "://location/"))))
         );
         Promise<List<URI>> promise = Promises.blockingPromise();
         discoveryService.lookupService("discovery:test:///service").invokeWithPromise(promise);
@@ -63,7 +62,7 @@ public class DiscoveryServiceImplTest {
         Assert.assertEquals("/service", results.get(0).getPath());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RejectedPromiseException.class)
     public void testQueryBadScheme() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         Promise<List<URI>> promise = Promises.blockingPromise();
@@ -71,7 +70,7 @@ public class DiscoveryServiceImplTest {
         promise.get();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = RejectedPromiseException.class)
     public void testQueryUnregisteredService() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         Promise<List<URI>> promise = Promises.blockingPromise();
