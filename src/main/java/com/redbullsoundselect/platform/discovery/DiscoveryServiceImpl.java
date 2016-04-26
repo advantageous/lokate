@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.advantageous.reakt.promise.Promises.invokablePromise;
 import static java.util.ServiceLoader.load;
 
 /**
@@ -55,6 +56,12 @@ public class DiscoveryServiceImpl implements DiscoveryService {
                     throw new IllegalArgumentException("no factory for scheme " + scheme);
                 }).create(entry.getValue()))
         );
+
+        /*
+        Create a basic echo service to return a literal of the requested URI
+         */
+        this.registerService("echo", query -> invokablePromise(promise ->
+                promise.resolve(Collections.singletonList(URI.create(query.getSchemeSpecificPart())))));
     }
 
     /**
