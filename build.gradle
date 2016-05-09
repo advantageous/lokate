@@ -4,54 +4,42 @@ buildscript {
         maven { url = 'http://artifactory1.ops.prod.rbmhops.net:8081/artifactory/plugins-release/' }
     }
     dependencies {
-        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.4.3'
+        classpath 'com.redbullsoundselect.platform:rbss-devops-plugin:1.4.5'
     }
 }
 
 plugins {
     id 'java'
-    id "net.saliman.cobertura" version "2.3.0"
-    id 'idea'
-    id "maven"
+    id 'maven'
 }
 
 apply plugin: 'rbss-devops'
 
-ext {
-    vertxVersion = '3.2.1'
-}
-
 group 'com.redbullsoundselect.platform'
-version '1.0.1'
+version '1.0.2'
 
 sourceCompatibility = '1.8'
 
 dependencies {
-    compile "org.slf4j:slf4j-api:1.7.12"
-    compile "io.vertx:vertx-core:$vertxVersion"
+    compile 'org.slf4j:slf4j-api:1.7.12'
+    compile 'io.vertx:vertx-core:3.2.1'
     compile 'io.advantageous.reakt:reakt:2.6.0.RC2'
     compile 'io.advantageous.reakt:reakt-vertx:2.1.0.RELEASE'
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
-    testCompile "ch.qos.logback:logback-core:1.1.3"
-    testCompile "ch.qos.logback:logback-classic:1.1.3"
+    testCompile 'ch.qos.logback:logback-core:1.1.3'
+    testCompile 'ch.qos.logback:logback-classic:1.1.3'
 }
 
 testDockerContainers {
     consul {
-        portMapping container: "8400", host: "8400"
-        portMapping container: "8500", host: "8500"
-        portMapping container: "8600", host: "53/udp"
-        containerName "consul"
-        image "progrium/consul"
-        runArgs "-server -bootstrap -dc docker -ui-dir /ui"
+        portMapping container: "8400", host: '8400'
+        portMapping container: "8500", host: '8500'
+        portMapping container: "8600", host: '53/udp'
+        containerName 'consul'
+        image 'progrium/consul'
+        runArgs '-server -bootstrap -dc docker -ui-dir /ui'
         waitAfterRun 3
-    }
-}
-
-idea {
-    project {
-        languageLevel = '1.8'
     }
 }
 

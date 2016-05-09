@@ -59,7 +59,7 @@ class ConsulDiscoveryService implements DiscoveryService {
                     .exceptionHandler(promise::reject)
                     .handler(httpClientResponse -> httpClientResponse
                             .exceptionHandler(promise::reject)
-                            .bodyHandler(buffer -> promise.accept(buffer.toJsonArray()
+                            .bodyHandler(buffer -> promise.resolve(buffer.toJsonArray()
                                     .stream()
                                     .filter(o -> o instanceof JsonObject)
                                     .map(o -> (JsonObject) o)
