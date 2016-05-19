@@ -8,6 +8,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 public class DnsDiscoveryServiceTest {
@@ -20,13 +21,13 @@ public class DnsDiscoveryServiceTest {
         if (dockerHost != null) {
             CONSUL_HOST = dockerHost.split(":")[1].substring(2);
         } else {
-            CONSUL_HOST = "192.168.99.100";
+            CONSUL_HOST = "Mac OS X".equals(System.getProperty("os.name")) ? "192.168.99.100" : "localhost";
         }
         TEST_CONFIGS = new URI[]{
                 URI.create("dns://ns-620.awsdns-13.net:53"),
                 URI.create("dns://" + CONSUL_HOST + ":8600")
         };
-        System.out.println("Test configs: " + TEST_CONFIGS);
+        System.out.println("Test configs: " + Arrays.toString(TEST_CONFIGS));
     }
 
     @Test

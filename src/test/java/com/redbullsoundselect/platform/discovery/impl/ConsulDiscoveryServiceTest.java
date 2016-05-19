@@ -33,7 +33,7 @@ public class ConsulDiscoveryServiceTest {
             final String[] parts = dockerHost.split(":");
             CONSUL_HOST = parts[1].substring(2);
         } else {
-            CONSUL_HOST = "192.168.99.100";
+            CONSUL_HOST = "Mac OS X".equals(System.getProperty("os.name")) ? "192.168.99.100" : "localhost";
         }
         CONSUL_PORT = 8500;
         TEST_CONFIG = URI.create("consul:http://" + CONSUL_HOST + ":" + CONSUL_PORT);
