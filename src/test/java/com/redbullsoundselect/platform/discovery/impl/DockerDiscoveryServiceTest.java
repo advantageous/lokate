@@ -20,7 +20,7 @@ public class DockerDiscoveryServiceTest {
         final String dockerHost;
 
         if (dockerHostEnv == null) {
-            dockerHost = "192.168.99.100";
+            dockerHost = "Mac OS X".equals(System.getProperty("os.name")) ? "192.168.99.100" : "localhost";
         } else {
             dockerHost = URI.create(dockerHostEnv).getHost();
         }
