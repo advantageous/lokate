@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class DockerDiscoveryServiceTest {
 
     @Test(expected = RejectedPromiseException.class)
     public void testWithNullQuery() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
         service.lookupService((URI) null).invokeWithPromise(promise);
         promise.get();
@@ -54,7 +55,7 @@ public class DockerDiscoveryServiceTest {
 
     @Test
     public void testQueryByName() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
         service.lookupService("docker:///consul").invokeWithPromise(promise);
         List<URI> result = promise.get();
@@ -65,7 +66,7 @@ public class DockerDiscoveryServiceTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testQueryWithBadScheme() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
         service.lookupService("bogus://localhost/consul").invokeWithPromise(promise);
         promise.get();
@@ -73,7 +74,7 @@ public class DockerDiscoveryServiceTest {
 
     @Test
     public void testQueryByNameAndContainerPort() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
         service.lookupService("docker:///consul?containerPort=8500").invokeWithPromise(promise);
         List<URI> result = promise.get();
@@ -83,7 +84,7 @@ public class DockerDiscoveryServiceTest {
 
     @Test
     public void testQueryByNameAndContainerPortNoPublic() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
         service.lookupService("docker:///consul?containerPort=8300&requirePublicPort=false").invokeWithPromise(promise);
         List<URI> result = promise.get();
@@ -93,7 +94,7 @@ public class DockerDiscoveryServiceTest {
 
     @Test
     public void testQueryByNameAndContainerPortNotFound() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         DockerDiscoveryService service = new DockerDiscoveryService(TEST_CONFIG);
         service.lookupService("docker:///consul?containerPort=8080").invokeWithPromise(promise);
         Assert.assertEquals(Collections.emptyList(), promise.get());

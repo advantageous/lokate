@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -103,7 +104,7 @@ public class ConsulDiscoveryServiceTest {
 
     @Test(expected = RejectedPromiseException.class)
     public void testWithNullQuery() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
         service.lookupService((URI) null).invokeWithPromise(promise);
         promise.get();
@@ -111,7 +112,7 @@ public class ConsulDiscoveryServiceTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testQueryWithBadScheme() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
         service.lookupService("bogus://localhost/httpd").invokeWithPromise(promise);
         promise.get();
@@ -119,7 +120,7 @@ public class ConsulDiscoveryServiceTest {
 
     @Test
     public void testQueryByName() throws Exception {
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
         service.lookupService("consul:///consul").invokeWithPromise(promise);
         List<URI> result = promise.get();
@@ -131,7 +132,7 @@ public class ConsulDiscoveryServiceTest {
     @Test
     public void testQueryByNameAndTag() throws Exception {
         addTagToService("consul", "foo");
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(5));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
         service.lookupService("consul:///consul?tag=foo").invokeWithPromise(promise);
         List<URI> result = promise.get();
