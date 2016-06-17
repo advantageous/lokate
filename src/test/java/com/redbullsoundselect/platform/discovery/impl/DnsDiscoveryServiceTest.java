@@ -4,6 +4,7 @@ import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
+import io.advantageous.test.DockerHostUtils;
 import io.advantageous.test.DockerTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -11,26 +12,20 @@ import org.junit.experimental.categories.Category;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 
 @Category(DockerTest.class)
 public class DnsDiscoveryServiceTest {
 
-    private static final String CONSUL_HOST;
     private static final URI[] TEST_CONFIGS;
 
     static {
-        final String dockerHost = System.getenv("DOCKER_HOST");
-        if (dockerHost != null) {
-            CONSUL_HOST = dockerHost.split(":")[1].substring(2);
-        } else {
-            CONSUL_HOST = "192.168.99.100";
-        }
         TEST_CONFIGS = new URI[]{
                 URI.create("dns://ns-620.awsdns-13.net:53"),
-                URI.create("dns://" + CONSUL_HOST + ":8600")
+                URI.create("dns://" + DockerHostUtils.getDockerHost() + ":8600")
         };
-        System.out.println("Test configs: " + TEST_CONFIGS);
+        System.out.println("Test configs: " + Arrays.toString(TEST_CONFIGS));
     }
 
     @Test

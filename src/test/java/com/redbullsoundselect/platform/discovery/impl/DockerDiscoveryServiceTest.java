@@ -3,6 +3,7 @@ package com.redbullsoundselect.platform.discovery.impl;
 import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
+import io.advantageous.test.DockerHostUtils;
 import io.advantageous.test.DockerTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,19 +17,9 @@ import java.util.List;
 @Category(DockerTest.class)
 public class DockerDiscoveryServiceTest {
 
-    private static final URI TEST_CONFIG;
+    private static final URI TEST_CONFIG = URI.create("docker:http://" + DockerHostUtils.getDockerHost() + ":" + 2375);
 
     static {
-        final String dockerHostEnv = System.getenv("DOCKER_HOST");
-        final String dockerHost;
-
-        if (dockerHostEnv == null) {
-            dockerHost = "192.168.99.100";
-        } else {
-            dockerHost = URI.create(dockerHostEnv).getHost();
-        }
-
-        TEST_CONFIG = URI.create("docker:http://" + dockerHost + ":" + 2375);
         System.out.println("Test config: " + TEST_CONFIG);
     }
 

@@ -4,6 +4,7 @@ import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
+import io.advantageous.test.DockerHostUtils;
 import io.advantageous.test.DockerTest;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
@@ -26,21 +27,12 @@ import java.util.Optional;
 @Category(DockerTest.class)
 public class ConsulDiscoveryServiceTest {
 
-    private static final String CONSUL_HOST;
-    private static final int CONSUL_PORT;
-    private static final URI TEST_CONFIG;
+    private static final String CONSUL_HOST = DockerHostUtils.getDockerHost();
+    private static final int CONSUL_PORT = 8500;
+    private static final URI TEST_CONFIG = URI.create("consul:http://" + CONSUL_HOST + ":" + CONSUL_PORT);
     private static final Logger LOGGER = LoggerFactory.getLogger(ConsulDiscoveryServiceTest.class);
 
     static {
-        final String dockerHost = System.getenv("DOCKER_HOST");
-        if (dockerHost != null) {
-            final String[] parts = dockerHost.split(":");
-            CONSUL_HOST = parts[1].substring(2);
-        } else {
-            CONSUL_HOST = "192.168.99.100";
-        }
-        CONSUL_PORT = 8500;
-        TEST_CONFIG = URI.create("consul:http://" + CONSUL_HOST + ":" + CONSUL_PORT);
         System.out.println("Test config: " + TEST_CONFIG);
     }
 
