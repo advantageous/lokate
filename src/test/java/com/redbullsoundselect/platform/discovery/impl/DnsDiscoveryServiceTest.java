@@ -4,12 +4,15 @@ import com.redbullsoundselect.platform.discovery.DiscoveryService;
 import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
+import io.advantageous.test.DockerTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.URI;
 import java.util.List;
 
+@Category(DockerTest.class)
 public class DnsDiscoveryServiceTest {
 
     private static final String CONSUL_HOST;

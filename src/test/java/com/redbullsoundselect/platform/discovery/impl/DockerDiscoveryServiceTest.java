@@ -3,13 +3,16 @@ package com.redbullsoundselect.platform.discovery.impl;
 import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
+import io.advantageous.test.DockerTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
+@Category(DockerTest.class)
 public class DockerDiscoveryServiceTest {
 
     private static final URI TEST_CONFIG;
