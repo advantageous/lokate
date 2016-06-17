@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class DiscoveryServiceImplTest {
     @Test
     public void testEcho() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         discoveryService.lookupService("discovery:echo:///service").invokeWithPromise(promise);
         List<URI> results = promise.get();
         Assert.assertNotNull(results);
@@ -65,7 +66,7 @@ public class DiscoveryServiceImplTest {
     @Test(expected = RejectedPromiseException.class)
     public void testQueryBadScheme() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         discoveryService.lookupService("bogus:///bogus").invokeWithPromise(promise);
         promise.get();
     }
@@ -73,7 +74,7 @@ public class DiscoveryServiceImplTest {
     @Test(expected = RejectedPromiseException.class)
     public void testQueryUnregisteredService() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         discoveryService.lookupService("discovery:bogus:///bogus").invokeWithPromise(promise);
         promise.get();
     }
