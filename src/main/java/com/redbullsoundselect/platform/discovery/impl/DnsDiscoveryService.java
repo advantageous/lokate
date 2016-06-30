@@ -8,7 +8,11 @@ import io.vertx.core.dns.SrvRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -36,15 +40,45 @@ class DnsDiscoveryService implements DiscoveryService {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     DnsDiscoveryService(final URI... configs) {
-        if (configs == null || configs.length == 0)
-            throw new IllegalArgumentException("you must specify a configuration URI for the dns discovery service");
         this.vertx = Vertx.vertx();
-        this.dnsHosts = Arrays.stream(configs)
+        this.dnsHosts = readDnsConf();
+        this.dnsHosts.addAll(Arrays.stream(configs)
                 .peek(uri -> {
                     if (!SCHEME.equals(uri.getScheme()))
                         throw new IllegalArgumentException("scheme for docker service config must be " + SCHEME);
                 })
-                .map(uri -> URI.create(uri.getSchemeSpecificPart())).collect(Collectors.toList());
+                .map(uri -> URI.create(uri.getSchemeSpecificPart())).collect(Collectors.toList())
+        );
+    }
+
+    static List<URI> readDnsConf() {
+        final File file = new File("/etc/resolv.conf");
+        if (file.exists()) {
+            try {
+                return Files.lines(file.toPath()).filter(line -> line.startsWith("nameserver"))
+                        .map(line -> {
+                            final String uriToParse = line.replace("nameserver ", "").trim();
+                            final String[] split = uriToParse.split(":");
+                            try {
+                                if (split.length == 1) {
+                                    return new URI("dns", "", split[0], 53, "", "", "");
+                                } else if (split.length >= 2) {
+                                    return new URI("dns", "", split[0], Integer.parseInt(split[1]), "", "", "");
+                                } else {
+                                    throw new IllegalStateException("Unable to parse URI from /etc/resolv.conf");
+                                }
+                            } catch (URISyntaxException e) {
+                                throw new IllegalStateException("failed to convert to URI");
+                            }
+
+                        })
+                        .collect(Collectors.toList());
+            } catch (IOException e) {
+                throw new IllegalStateException("can not read /etc/resolv.conf", e);
+            }
+        } else {
+            throw new IllegalStateException("" + file + " not found");
+        }
     }
 
     @Override
