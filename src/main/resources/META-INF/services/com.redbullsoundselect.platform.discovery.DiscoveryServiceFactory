@@ -1,3 +1,2 @@
 com.redbullsoundselect.platform.discovery.impl.DnsDiscoveryServiceFactory
-com.redbullsoundselect.platform.discovery.impl.DockerDiscoveryServiceFactory
 com.redbullsoundselect.platform.discovery.impl.ConsulDiscoveryServiceFactory

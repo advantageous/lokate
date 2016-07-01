@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
 
 public class DnsDiscoveryServiceFactoryTest {
 
@@ -27,5 +28,12 @@ public class DnsDiscoveryServiceFactoryTest {
         DiscoveryServiceFactory factory = new DnsDiscoveryServiceFactory();
         DiscoveryService service = factory.create(Collections.singletonList(URI.create("dns://foo")));
         Assert.assertNotNull(service);
+    }
+
+    @Test
+    public void testReadConfFromSystem() {
+        List<URI> servers = DnsDiscoveryService.readDnsConf();
+        Assert.assertNotNull(servers);
+        Assert.assertTrue(servers.size() > 0);
     }
 }

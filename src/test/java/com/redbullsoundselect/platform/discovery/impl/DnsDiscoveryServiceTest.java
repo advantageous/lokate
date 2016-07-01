@@ -35,11 +35,6 @@ public class DnsDiscoveryServiceTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testConstructWithNoConfig() throws Exception {
-        new DnsDiscoveryService();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void testConstructWithWrongConfig() throws Exception {
         new DnsDiscoveryService(URI.create("bogus://foo"));
     }
