@@ -3,13 +3,8 @@ Vert.x service for service discovery.
 
 ## Configuration URIs
 
-Docker
-```
-docker:http://localhost:3500/
-```
 
 DNS
-
 ```
 dns://localhost:8600/
 ```
@@ -20,15 +15,7 @@ consul:http://192.168.99.100:8500
 ```
 ## Query URIs
 
-Docker Query using default host and port.
-```
-discovery:docker:///impressions-service?containerPort=8080
-```
 
-Docker Query using custom host/port
-```
-discovery:docker:http://localhost:3500/impressions-service?containerPort=8080
-```
 
 DNS A Record Query.
 ```
@@ -48,3 +35,36 @@ Consul Query
 discovery:consul:///impressions-service?name=eventbus&staging
 discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbus&staging
 ```
+
+
+## Notes
+We used to support Docker, EC2 and Mesos
+
+Docker
+```
+docker:http://localhost:3500/
+```
+
+
+Docker Query using custom host/port
+```
+discovery:docker:http://localhost:3500/impressions-service?containerPort=8080
+```
+
+
+Docker Query using default host and port.
+```
+discovery:docker:///impressions-service?containerPort=8080
+```
+
+We dropped the support. We might add it back. 
+If we add it back, we will do it as a separate jar file.
+
+We use [JDK services](https://docs.oracle.com/javase/7/docs/api/java/util/ServiceLoader.html).
+
+Resources/META-INF.services/io.advantageous.discovery.DiscoveryServiceFactory
+```
+io.advantageous.discovery.impl.DnsDiscoveryServiceFactory
+io.advantageous.discovery.impl.ConsulDiscoveryServiceFactory
+```
+
