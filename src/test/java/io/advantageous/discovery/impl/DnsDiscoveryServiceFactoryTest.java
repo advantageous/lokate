@@ -1,7 +1,7 @@
-package com.redbullsoundselect.platform.discovery.impl;
+package io.advantageous.discovery.impl;
 
-import com.redbullsoundselect.platform.discovery.DiscoveryService;
-import com.redbullsoundselect.platform.discovery.DiscoveryServiceFactory;
+import io.advantageous.discovery.DiscoveryService;
+import io.advantageous.discovery.DiscoveryServiceFactory;
 import org.junit.Assert;
 import org.junit.Test;
 

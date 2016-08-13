@@ -1,6 +1,6 @@
-package com.redbullsoundselect.platform.discovery.impl;
+package io.advantageous.discovery.impl;
 
-import com.redbullsoundselect.platform.discovery.DiscoveryService;
+import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
 import io.vertx.core.Vertx;

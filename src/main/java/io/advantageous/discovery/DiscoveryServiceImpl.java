@@ -1,4 +1,4 @@
-package com.redbullsoundselect.platform.discovery;
+package io.advantageous.discovery;
 
 import io.advantageous.reakt.promise.Promise;
 import org.slf4j.Logger;

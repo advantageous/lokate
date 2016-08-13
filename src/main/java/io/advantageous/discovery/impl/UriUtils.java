@@ -1,4 +1,4 @@
-package com.redbullsoundselect.platform.discovery.impl;
+package io.advantageous.discovery.impl;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;

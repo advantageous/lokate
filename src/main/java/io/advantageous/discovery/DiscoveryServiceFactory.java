@@ -1,4 +1,4 @@
-package com.redbullsoundselect.platform.discovery;
+package io.advantageous.discovery;
 
 import java.net.URI;
 import java.util.List;
