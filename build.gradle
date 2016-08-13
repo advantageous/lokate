@@ -19,12 +19,13 @@
 
 plugins {
     id 'java'
+    id 'signing'
     id "maven"
     id "net.saliman.cobertura" version "2.3.2"
     id "io.advantageous.docker-test" version "0.1.6"
 }
 
-group 'com.advantageous.discovery'
+group 'io.advantageous.discovery'
 version '1.0.0'
 
 sourceCompatibility = '1.8'
