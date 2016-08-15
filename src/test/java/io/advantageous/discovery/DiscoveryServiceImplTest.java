@@ -22,6 +22,18 @@ public class DiscoveryServiceImplTest {
         Assert.assertEquals(1, discoveryService.getRegisteredServiceClasses().size());
     }
 
+
+    @Test
+    public void testDnsNoHost() throws Exception {
+        DiscoveryService discoveryService = DiscoveryService.create();
+
+        final List<URI> uriList = discoveryService.lookupService(URI.create("discovery:dns:A:///google.com?port=80"))
+                .invokeAsBlockingPromise().get();
+
+        Assert.assertTrue(uriList.size() > 0);
+    }
+
+
     @Test
     public void testConstructionWithServiceLoader() throws Exception {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl(

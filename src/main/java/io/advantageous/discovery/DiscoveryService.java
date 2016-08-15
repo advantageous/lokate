@@ -21,4 +21,8 @@ public interface DiscoveryService {
 
     Promise<List<URI>> lookupService(URI query);
 
+    static DiscoveryService create() {
+        return new DiscoveryServiceImpl(URI.create("dns://CONFIG"));
+    }
+
 }

@@ -34,21 +34,31 @@ class DnsDiscoveryService implements DiscoveryService {
     private static final String PORT_QUERY_KEY = "port";
     private static final String A_SCHEME = "A";
     private static final String SRV_SCHEME = "SRV";
+    private static final String CONFIG_ONLY = "CONFIG";
 
     private final Vertx vertx;
     private final List<URI> dnsHosts;
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     DnsDiscoveryService(final URI... configs) {
+
+
         this.vertx = Vertx.vertx();
         this.dnsHosts = readDnsConf();
-        this.dnsHosts.addAll(Arrays.stream(configs)
-                .peek(uri -> {
-                    if (!SCHEME.equals(uri.getScheme()))
-                        throw new IllegalArgumentException("scheme for docker service config must be " + SCHEME);
-                })
-                .map(uri -> URI.create(uri.getSchemeSpecificPart())).collect(Collectors.toList())
-        );
+
+        if (configs.length == 1 && configs[0].getHost().equals(CONFIG_ONLY)) {
+            //No op
+            logger.debug("Using config only");
+        } else {
+            this.dnsHosts.addAll(Arrays.stream(configs)
+                    .peek(uri -> {
+                        if (!SCHEME.equals(uri.getScheme()))
+                            throw new IllegalArgumentException("scheme for docker service config must be " + SCHEME);
+                    })
+                    .map(uri -> URI.create(uri.getSchemeSpecificPart())).collect(Collectors.toList())
+            );
+        }
+
     }
 
     static List<URI> readDnsConf() {
