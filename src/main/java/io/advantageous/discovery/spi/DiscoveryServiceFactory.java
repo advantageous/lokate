@@ -1,4 +1,6 @@
-package io.advantageous.discovery;
+package io.advantageous.discovery.spi;
+
+import io.advantageous.discovery.DiscoveryService;
 
 import java.net.URI;
 import java.util.List;
@@ -12,4 +14,6 @@ public interface DiscoveryServiceFactory {
     String getScheme();
 
     DiscoveryService create(List<URI> uris);
+
+
 }

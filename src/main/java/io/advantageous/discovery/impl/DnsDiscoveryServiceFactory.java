@@ -1,7 +1,7 @@
 package io.advantageous.discovery.impl;
 
 import io.advantageous.discovery.DiscoveryService;
-import io.advantageous.discovery.DiscoveryServiceFactory;
+import io.advantageous.discovery.spi.DiscoveryServiceFactory;
 
 import java.net.URI;
 import java.util.List;

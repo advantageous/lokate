@@ -10,7 +10,7 @@ public class UriUtils {
         throw new IllegalStateException("this class should not be instantiated.");
     }
 
-     public static Map<String, String> splitQuery(String query) {
+    public static Map<String, String> splitQuery(String query) {
         if (query == null) return Collections.emptyMap();
         final Map<String, String> queryPairs = new LinkedHashMap<>();
         final String[] pairs = query.split("&|;");

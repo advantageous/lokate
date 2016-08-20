@@ -1,5 +1,6 @@
-package io.advantageous.discovery;
+package io.advantageous.discovery.impl;
 
+import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.reakt.exception.RejectedPromiseException;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
