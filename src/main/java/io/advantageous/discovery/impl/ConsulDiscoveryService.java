@@ -1,6 +1,7 @@
 package io.advantageous.discovery.impl;
 
 import io.advantageous.discovery.DiscoveryService;
+import io.advantageous.discovery.utils.UriUtils;
 import io.advantageous.reakt.promise.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;

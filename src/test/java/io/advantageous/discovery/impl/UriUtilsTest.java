@@ -1,5 +1,6 @@
 package io.advantageous.discovery.impl;
 
+import io.advantageous.discovery.utils.UriUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

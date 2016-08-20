@@ -1,16 +1,16 @@
-package io.advantageous.discovery.impl;
+package io.advantageous.discovery.utils;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-class UriUtils {
+public class UriUtils {
 
     private UriUtils() {
         throw new IllegalStateException("this class should not be instantiated.");
     }
 
-    static Map<String, String> splitQuery(String query) {
+     public static Map<String, String> splitQuery(String query) {
         if (query == null) return Collections.emptyMap();
         final Map<String, String> queryPairs = new LinkedHashMap<>();
         final String[] pairs = query.split("&|;");
