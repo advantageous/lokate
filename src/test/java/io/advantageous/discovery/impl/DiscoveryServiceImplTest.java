@@ -13,14 +13,15 @@ import java.util.Collections;
 import java.util.List;
 
 import static io.advantageous.reakt.promise.Promises.invokablePromise;
+import static org.junit.Assert.*;
 
 public class DiscoveryServiceImplTest {
 
     @Test
     public void testEmptyConstruction() throws Exception {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Assert.assertNotNull(discoveryService);
-        Assert.assertEquals(1, discoveryService.getRegisteredServiceClasses().size());
+        assertNotNull(discoveryService);
+        assertEquals(1, discoveryService.getRegisteredServiceClasses().size());
     }
 
 
@@ -31,7 +32,7 @@ public class DiscoveryServiceImplTest {
         final List<URI> uriList = discoveryService.lookupService(URI.create("discovery:dns:A:///google.com?port=80"))
                 .invokeAsBlockingPromise().get();
 
-        Assert.assertTrue(uriList.size() > 0);
+        assertTrue(uriList.size() > 0);
     }
 
 
@@ -41,8 +42,8 @@ public class DiscoveryServiceImplTest {
                 URI.create("dns://ns-620.awsdns-13.net:53"),
                 URI.create("consul:http://192.168.99.100:8500")
         );
-        Assert.assertNotNull(discoveryService);
-        Assert.assertEquals(3, discoveryService.getRegisteredServiceClasses().size());
+        assertNotNull(discoveryService);
+        assertEquals(3, discoveryService.getRegisteredServiceClasses().size());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -59,20 +60,35 @@ public class DiscoveryServiceImplTest {
         Promise<List<URI>> promise = Promises.blockingPromise();
         discoveryService.lookupService("discovery:test:///service").invokeWithPromise(promise);
         List<URI> results = promise.get();
-        Assert.assertNotNull(results);
-        Assert.assertEquals(1, results.size());
-        Assert.assertEquals("location", results.get(0).getHost());
+        assertNotNull(results);
+        assertEquals(1, results.size());
+        assertEquals("location", results.get(0).getHost());
     }
 
     @Test
     public void testEcho() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
-        discoveryService.lookupService("discovery:echo:///service").invokeWithPromise(promise);
+        discoveryService.lookupService("discovery:echo:http://foo.com:9090").invokeWithPromise(promise);
         List<URI> results = promise.get();
-        Assert.assertNotNull(results);
-        Assert.assertEquals(1, results.size());
-        Assert.assertEquals("/service", results.get(0).getPath());
+        assertNotNull(results);
+        assertEquals(1, results.size());
+        assertEquals("foo.com", results.get(0).getHost());
+        assertEquals(9090, results.get(0).getPort());
+    }
+
+    @Test
+    public void testEchos() {
+        DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
+        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
+        discoveryService.lookupService("discovery:echo:http://foo.com:9090,http://bar.com:9091").invokeWithPromise(promise);
+        List<URI> results = promise.get();
+        assertNotNull(results);
+        assertEquals(2, results.size());
+        assertEquals("foo.com", results.get(0).getHost());
+        assertEquals(9090, results.get(0).getPort());
+        assertEquals("bar.com", results.get(1).getHost());
+        assertEquals(9091, results.get(1).getPort());
     }
 
     @Test(expected = RejectedPromiseException.class)

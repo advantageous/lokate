@@ -62,8 +62,18 @@ public class DiscoveryServiceImpl implements DiscoveryService {
         /*
         Create a basic echo service to return a literal of the requested URI
          */
-        this.registerService("echo", query -> invokablePromise(promise ->
-                promise.resolve(Collections.singletonList(URI.create(query.getSchemeSpecificPart())))));
+        this.registerService("echo", query -> invokablePromise(promise -> {
+
+            final String schemeSpecificPart = query.getSchemeSpecificPart();
+            if (schemeSpecificPart.contains(",")) {
+                promise.resolve(Arrays.stream(schemeSpecificPart.split(","))
+                        .filter(part -> !part.trim().isEmpty())
+                        .map(URI::create)
+                        .collect(Collectors.toList()));
+            } else {
+                promise.resolve(Collections.singletonList(URI.create(schemeSpecificPart)));
+            }
+        }));
     }
 
     /**

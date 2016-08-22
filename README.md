@@ -37,6 +37,21 @@ discovery:consul:http://consul.rbmhops.net:3500/impressions-service?name=eventbu
 ```
 
 
+## Echo
+
+One service
+```
+discovery:echo:http://foo.com:8080
+```
+
+Many
+```
+discovery:echo:http://foo.com:9090,http://bar.com:9091
+```
+
+
+You can use echo for testing locally. 
+
 ## Notes
 We used to support Docker, EC2 and Mesos
 
