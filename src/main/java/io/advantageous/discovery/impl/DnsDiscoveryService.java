@@ -2,6 +2,7 @@ package io.advantageous.discovery.impl;
 
 import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.discovery.utils.UriUtils;
+import io.advantageous.reakt.Callback;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
 import io.vertx.core.Vertx;
@@ -140,7 +141,7 @@ class DnsDiscoveryService implements DiscoveryService {
     private void resolveA(final int hostIndex,
                           final String serviceName,
                           final int port,
-                          final Promise<List<URI>> promise) {
+                          final Callback<List<URI>> promise) {
 
         if (hostIndex >= this.dnsHosts.size()) {
             promise.resolve(Collections.emptyList());
@@ -164,7 +165,7 @@ class DnsDiscoveryService implements DiscoveryService {
         );
     }
 
-    private void resolveSRV(final int hostIndex, final String serviceName, final Promise<List<URI>> promise) {
+    private void resolveSRV(final int hostIndex, final String serviceName, final Callback<List<URI>> promise) {
 
         if (hostIndex >= dnsHosts.size()) {
             promise.resolve(Collections.emptyList());

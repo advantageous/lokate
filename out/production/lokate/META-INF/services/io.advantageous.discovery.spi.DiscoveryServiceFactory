@@ -1,0 +1,2 @@
+io.advantageous.discovery.impl.DnsDiscoveryServiceFactory
+io.advantageous.discovery.impl.ConsulDiscoveryServiceFactory

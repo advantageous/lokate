@@ -29,8 +29,7 @@ public class DiscoveryServiceImplTest {
     public void testDnsNoHost() throws Exception {
         DiscoveryService discoveryService = DiscoveryService.create();
 
-        final List<URI> uriList = discoveryService.lookupService(URI.create("discovery:dns:A:///google.com?port=80"))
-                .invokeAsBlockingPromise().get();
+        final List<URI> uriList = discoveryService.lookupService(URI.create("discovery:dns:A:///google.com?port=80")).blockingGet(Duration.ofSeconds(10));
 
         assertTrue(uriList.size() > 0);
     }
@@ -57,9 +56,7 @@ public class DiscoveryServiceImplTest {
         discoveryService.registerService("test", query -> invokablePromise(promise ->
                 promise.resolve(Collections.singletonList(URI.create(DiscoveryService.RESULT_SCHEME + "://location/"))))
         );
-        Promise<List<URI>> promise = Promises.blockingPromise();
-        discoveryService.lookupService("discovery:test:///service").invokeWithPromise(promise);
-        List<URI> results = promise.get();
+        List<URI> results = discoveryService.lookupService("discovery:test:///service").blockingGet(Duration.ofSeconds(15));
         assertNotNull(results);
         assertEquals(1, results.size());
         assertEquals("location", results.get(0).getHost());
@@ -68,9 +65,8 @@ public class DiscoveryServiceImplTest {
     @Test
     public void testEcho() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
-        discoveryService.lookupService("discovery:echo:http://foo.com:9090").invokeWithPromise(promise);
-        List<URI> results = promise.get();
+
+        List<URI> results = discoveryService.lookupService("discovery:echo:http://foo.com:9090").blockingGet(Duration.ofSeconds(15));
         assertNotNull(results);
         assertEquals(1, results.size());
         assertEquals("foo.com", results.get(0).getHost());
@@ -80,9 +76,8 @@ public class DiscoveryServiceImplTest {
     @Test
     public void testEchos() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
-        discoveryService.lookupService("discovery:echo:http://foo.com:9090,http://bar.com:9091").invokeWithPromise(promise);
-        List<URI> results = promise.get();
+        List<URI> results =  discoveryService.lookupService("discovery:echo:http://foo.com:9090,http://bar.com:9091")
+                .blockingGet(Duration.ofSeconds(15));
         assertNotNull(results);
         assertEquals(2, results.size());
         assertEquals("foo.com", results.get(0).getHost());
@@ -94,17 +89,13 @@ public class DiscoveryServiceImplTest {
     @Test(expected = RejectedPromiseException.class)
     public void testQueryBadScheme() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
-        discoveryService.lookupService("bogus:///bogus").invokeWithPromise(promise);
-        promise.get();
+        discoveryService.lookupService("bogus:///bogus").blockingGet(Duration.ofSeconds(10));
     }
 
     @Test(expected = RejectedPromiseException.class)
     public void testQueryUnregisteredService() {
         DiscoveryServiceImpl discoveryService = new DiscoveryServiceImpl();
-        Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
-        discoveryService.lookupService("discovery:bogus:///bogus").invokeWithPromise(promise);
-        promise.get();
+        discoveryService.lookupService("discovery:bogus:///bogus").blockingGet(Duration.ofSeconds(10));
     }
 
 }

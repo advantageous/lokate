@@ -39,17 +39,17 @@ public class ConsulDiscoveryServiceTest {
     private static void addTagToService(String serviceName, String tag) {
         Promise<Optional<JsonObject>> requestPromise = Promises.blockingPromise();
         Vertx.vertx().createHttpClient().get(CONSUL_PORT, CONSUL_HOST, "/v1/catalog/service/" + serviceName)
-                .exceptionHandler(requestPromise::reject)
+                .exceptionHandler(requestPromise.asHandler()::reject)
                 .handler(httpClientResponse -> httpClientResponse
-                        .exceptionHandler(requestPromise::reject)
-                        .bodyHandler(buffer -> requestPromise.accept(buffer.toJsonArray()
+                        .exceptionHandler(requestPromise.asHandler()::reject)
+                        .bodyHandler(buffer -> requestPromise.asHandler().accept(buffer.toJsonArray()
                                 .stream()
                                 .filter(o -> o instanceof JsonObject)
                                 .map(o -> (JsonObject) o)
                                 .findAny()
                         )))
                 .end();
-        JsonObject original = requestPromise.get().orElseGet(() -> {
+        JsonObject original = requestPromise.asHandler().get().orElseGet(() -> {
             throw new RuntimeException();
         });
         LOGGER.debug("original object: {}", original);
@@ -72,12 +72,12 @@ public class ConsulDiscoveryServiceTest {
         Promise<HttpClientResponse> updatePromise = Promises.blockingPromise();
         Vertx.vertx().createHttpClient().put(CONSUL_PORT, CONSUL_HOST, "/v1/catalog/register")
                 .exceptionHandler((e) -> Assert.fail())
-                .handler(updatePromise::accept)
+                .handler(updatePromise.asHandler()::accept)
                 .putHeader(HttpHeaders.CONTENT_LENGTH, buffer.length() + "")
                 .write(buffer)
                 .end();
 
-        HttpClientResponse response = updatePromise.get();
+        HttpClientResponse response = updatePromise.asHandler().get();
         Assert.assertEquals(200, response.statusCode());
     }
 
@@ -101,24 +101,24 @@ public class ConsulDiscoveryServiceTest {
     public void testWithNullQuery() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
-        service.lookupService((URI) null).invokeWithPromise(promise);
-        promise.get();
+        service.lookupService((URI) null).asHandler().invokeWithPromise(promise);
+        promise.asHandler().get();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testQueryWithBadScheme() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
-        service.lookupService("bogus://localhost/httpd").invokeWithPromise(promise);
-        promise.get();
+        service.lookupService("bogus://localhost/httpd").asHandler().invokeWithPromise(promise);
+        promise.asHandler().get();
     }
 
     @Test
     public void testQueryByName() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
-        service.lookupService("consul:///consul").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("consul:///consul").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.size());
         Assert.assertFalse(result.get(0).getHost().isEmpty());
@@ -129,8 +129,8 @@ public class ConsulDiscoveryServiceTest {
         addTagToService("consul", "foo");
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         ConsulDiscoveryService service = new ConsulDiscoveryService(TEST_CONFIG);
-        service.lookupService("consul:///consul?tag=foo").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("consul:///consul?tag=foo").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.size());
         Assert.assertFalse(result.get(0).getHost().isEmpty());

@@ -2,12 +2,14 @@ package io.advantageous.discovery.impl;
 
 import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.discovery.spi.DiscoveryServiceFactory;
+import io.advantageous.reakt.CallbackHandler;
 import io.advantageous.reakt.promise.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static io.advantageous.reakt.promise.Promises.invokablePromise;
@@ -86,18 +88,20 @@ public class DiscoveryServiceImpl implements DiscoveryService {
     public Promise<List<URI>> lookupService(final URI query) {
         logger.debug("looking up service for query: {}", query);
 
-        return invokablePromise(promise -> {
+        return invokablePromise(callback -> {
             if (!query.getScheme().equals(QUERY_SCHEME)) {
-                promise.reject("discovery uris must begin with \"" + QUERY_SCHEME + ":\"");
+                callback.reject("discovery uris must begin with \"" + QUERY_SCHEME + ":\"");
                 return;
             }
             final String scheme = URI.create(query.getSchemeSpecificPart()).getScheme();
             if (!this.discoveryServices.containsKey(scheme)) {
-                promise.reject("discovery scheme not registered: " + QUERY_SCHEME + ":" + scheme);
+                callback.reject("discovery scheme not registered: " + QUERY_SCHEME + ":" + scheme);
                 return;
             }
-            this.discoveryServices.get(scheme).lookupService(URI.create(query.getSchemeSpecificPart()))
-                    .invokeWithPromise(promise);
+            final DiscoveryService discoveryServiceProvider = this.discoveryServices.get(scheme);
+            final String querySpecific = query.getSchemeSpecificPart();
+            discoveryServiceProvider.lookupService(querySpecific).asHandler().thenCallback(callback).invoke();
+
         });
     }
 

@@ -43,32 +43,32 @@ public class DnsDiscoveryServiceTest {
     public void testWithNullQuery() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService((URI) null).invokeWithPromise(promise);
-        promise.get();
+        service.lookupService((URI) null).asHandler().invokeWithPromise(promise.asHandler());
+        promise.asHandler().get();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testWithWrongScheme() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("bogus://bogus").invokeWithPromise(promise);
-        promise.get();
+        service.lookupService("bogus://bogus").asHandler().invokeWithPromise(promise.asHandler());
+        promise.asHandler().get();
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testWithWrongSubScheme() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:bogus://bogus").invokeWithPromise(promise);
-        promise.get();
+        service.lookupService("dns:bogus://bogus").asHandler().invokeWithPromise(promise.asHandler());
+        promise.asHandler().get();
     }
 
     @Test
     public void testQueryA() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=100").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=100").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.size());
         Assert.assertFalse(result.get(0).getHost().isEmpty());
@@ -78,24 +78,24 @@ public class DnsDiscoveryServiceTest {
     public void testQueryANoPort() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net").invokeWithPromise(promise);
-        promise.get();
+        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net").asHandler().invokeWithPromise(promise);
+        promise.asHandler().get();
     }
 
     @Test(expected = RejectedPromiseException.class)
     public void testQueryABadPort() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=bogus").invokeWithPromise(promise);
-        promise.get();
+        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=bogus").asHandler().invokeWithPromise(promise);
+        promise.asHandler().get();
     }
 
     @Test
     public void testQueryAThatDoesNotExist() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:A:///potato.redbull.com?port=100").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("dns:A:///potato.redbull.com?port=100").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.size());
     }
@@ -104,8 +104,8 @@ public class DnsDiscoveryServiceTest {
     public void testQueryAWithBadPrimary() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(URI.create("dns://0.0.0.0:53"), TEST_CONFIGS[0]);
-        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=100").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("dns:A:///ipsec1.rbss.staging.rbmhops.net?port=100").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.size());
         Assert.assertFalse(result.get(0).getHost().isEmpty());
@@ -115,8 +115,8 @@ public class DnsDiscoveryServiceTest {
     public void testQuerySRV() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:SRV:///consul.service.consul").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("dns:SRV:///consul.service.consul").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.size());
         Assert.assertFalse(result.get(0).getHost().isEmpty());
@@ -127,8 +127,8 @@ public class DnsDiscoveryServiceTest {
     public void testQuerySRVWithUnknownHost() throws Exception {
         Promise<List<URI>> promise = Promises.blockingPromise(Duration.ofSeconds(10));
         DiscoveryService service = new DnsDiscoveryService(TEST_CONFIGS);
-        service.lookupService("dns:SRV:///bogus.consul").invokeWithPromise(promise);
-        List<URI> result = promise.get();
+        service.lookupService("dns:SRV:///bogus.consul").asHandler().invokeWithPromise(promise);
+        List<URI> result = promise.asHandler().get();
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.size());
     }
